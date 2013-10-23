@@ -1,8 +1,66 @@
 <?
 
-/* 
+// -------------------------------------------------------------------------------------------------
+/**
+ * form_builder
+ * Bootstrap form builder
+ * 
+ * This simple Library builds internal form elements with correct wrappers for Bootstrap 3.
+ * 
+ * It extends the Bootstrap form helper and will not work without it.
+ * 
+ *
+ * Carabiner is inspired by Minify {@link http://code.google.com/p/minify/ by Steve Clay}, PHP 
+ * Combine {@link http://rakaz.nl/extra/code/combine/ by Niels Leenheer} and AssetLibPro 
+ * {@link http://code.google.com/p/assetlib-pro/ by Vincent Esche}, among other things.
+ *
+ * @package		codeigniter_form_builder
+ * @subpackage          Libraries
+ * @category            Form Bilder
+ * @author		Tyler Wall <tyler.r.wall@gmail.com>	
+ * @version		0.5
+ * @license		http://opensource.org/licenses/MIT MIT licensed.
+ *
+ * @todo		fix new bugs. Duh :D
+ * @todo                test Objects
+ * @todo                Add more attributes for form_elements
+ * @todo                Add select, radio classes for inline formating
+ * @todo                Add form building functions
  */
-class form_builder {
+/*
+    ===============================================================================================
+    USAGE
+    ===============================================================================================
+    
+    1. Load codeigniter 'form' helper       ---         $this->load->helper('form');
+    2. Load this library                    ---         $this->load->library('form_builder');
+    3. Open your form (include the approprate class and col-md-* for formating
+    4. Echo out the output of the form_builder->build_*
+    5. Close your form ('</form>').
+    6. Enjoy easy forms
+
+    -----------------------------------------------------------------------------------------------
+
+    <? $this->load->helper('form'); ?>
+    <? $this->load->library('form_builder'); ?>
+    
+    <form id="item_form" name="item_form" method="post" class="col-md-7 form-horizontal" action="">
+        <?=
+        $this->form_builder->build_form_horizontal(
+                array(
+            array(
+                'id' => 'name',
+                'placeholder' => 'Item Name',
+            ),
+            array(
+                'id' => 'subtitle',
+                'placeholder' => 'Subtitle'
+            )
+                ), $item);
+        ?>
+    </form>
+ */
+class Form_builder {
 
     private $default_input_type = 'form_input';
     private $bootstrap_required_input_class = 'form-control';
@@ -14,9 +72,21 @@ class form_builder {
         $this->func = $this->default_input_type;
     }
 
+    /**
+     * Build From  Horizontal
+     * @access	public
+     * @param	Array - The array of options for the form.
+                array(
+                    array(
+                        See function _prep_options() for what this needs to contain
+                    )
+                )
+     * @return  form elements+wrappers HTML
+     */
     function build_form_horizontal($options, $data_source = array()) {
         $this->data_source = (array) $data_source;
 
+        /* untested */
         if (is_object($options)) {
             $options = (array) $options;
         }
@@ -75,7 +145,7 @@ class form_builder {
         if (isset($elm_options['name']) && isset($this->data_source[$elm_options['name']])) {
             $default_value = $this->data_source[$elm_options['name']];
         }
-        $elm_options['value'] = set_value($elm_options['name'], $default_value);
+        $elm_options['value'] = $this->adv_set_value($elm_options['name'], $default_value);
 
         return;
     }
@@ -84,7 +154,6 @@ class form_builder {
      * Form Value
      *
      * Upgraded from Codeigniter Form Helper
-     * by Tyler Wall
      * 
      * Grabs a value from the POST or GET array for the specified field so you can
      * re-populate an input field or textarea.  If Form Validation
@@ -93,6 +162,8 @@ class form_builder {
      * @access	public
      * @param	string
      * @return	mixed
+     * @author ExpressionEngine Dev Team
+     * @author Tyler Wall <tyler.r.wall@gmail.com>
      */
     function adv_set_value($field = '', $default = '') {
         if (FALSE === ($OBJ = & _get_validation_object())) {
@@ -118,11 +189,11 @@ class form_builder {
     private function _post_elm() {
         return '</div>';
     }
-    
+
     private function _pre_input() {
         return '<div class="col-md-9">';
     }
-    
+
     private function _post_input() {
         return '</div>';
     }
