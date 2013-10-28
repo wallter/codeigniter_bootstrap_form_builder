@@ -21,21 +21,37 @@ Load the Codeigniter form helper, then load the form_builder library.
 2. Open Your form
 ==============
 
-	<form id="item_form" name="item_form" method="post" class="col-md-7 form-horizontal" action="">
+	<?= $this->form_builder->open_form(array('action' => '')); ?>
 	
-2. Echo out your form
+3. Echo out your form
 ==============
 
 	<?=
-        $this->form_builder->build_form_horizontal(
-                array(
-            array(
-                'id' => 'name',
-                'placeholder' => 'Item Name',
-            ),
-            array(
-                'id' => 'subtitle',
-                'placeholder' => 'Subtitle'
-            )
-                ), $item);
-        ?>
+            $this->form_builder->build_form_horizontal(
+                    array(
+                array( /* INPUT */
+                    'id' => 'name',
+                    'placeholder' => 'Item Name',
+                ),
+                array( /* DROP DOWN */
+                            'id' => 'published',
+                            'type' => 'dropdown',
+                            'options' => array(
+                                '1' => 'Published',
+                                '2' => 'Disabled'
+                            )
+                        ),
+                array( /* TEXTAREA */
+                    'id' => 'description',
+                    'type' => 'textarea',
+                    'class' => 'wysihtml5',
+                    'placeholder' => 'Item Description (HTML or rich text)',
+                    'value' => set_value('description', html_entity_decode($item->description))
+                )
+                    ), $defaults_object_or_array_from_db);
+            ?>
+
+4. Close The Form
+==============
+
+	<?= $this->form_builder->close_form(); ?>
