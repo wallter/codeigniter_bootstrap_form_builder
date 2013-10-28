@@ -63,7 +63,7 @@ Produces:
      <div class="form-group">
          <label class="col-md-2 control-label" for="name">Name</label>
          <div class="col-md-9">
-             <input type="text" name="name" value="Riiviva Microderm " id="name" placeholder="Item Name" class="form-control"  />
+             <input type="text" name="name" value=" " id="name" placeholder="Item Name" class="form-control"  />
          </div>
      </div>
      <div class="form-group">
