@@ -67,7 +67,7 @@ class Form_builder {
         'default_dropdown_class' => 'valid',
         'default_control_label_width' => 'col-md-2',
         'default_form_control_width' => 'col-md-9',
-        'default_form_class' => 'form-horizontal col-md-12'
+        'default_form_class' => 'form-horizontal col-md-12',
     );
     private $func;
     private $data_source;
@@ -135,16 +135,21 @@ class Form_builder {
         foreach ($options as $elm_options) {
             if (is_array($elm_options)) {
                 $this->_prep_options($elm_options);
-                $this->print_string .= $this->_pre_elm();
-                $this->print_string .= $this->_label($elm_options);
-                $this->print_string .= $this->_build_input($elm_options);
-                $this->print_string .= $this->_post_elm();
+                if ($this->func == 'form_hidden') {
+                    $this->print_string .= $this->_build_input($elm_options);
+                } else {
+                    $this->print_string .= $this->_pre_elm();
+                    $this->print_string .= $this->_label($elm_options);
+                    $this->print_string .= $this->_build_input($elm_options);
+                    $this->print_string .= $this->_post_elm();
+                }
             }
         }
         return $this->print_string;
     }
 
     private function _prep_options(&$elm_options) {
+        $this->func = $this->config['default_input_type'];
         /* Pull the input type from the array */
         if (isset($elm_options['type'])) {
             $this->func = 'form_' . $elm_options['type'];
@@ -177,10 +182,10 @@ class Form_builder {
          * Also, make for fun defaulting by passing an object 
          */
         $default_value = '';
-        if (isset($elm_options['value'])) {
-            $default_value = $elm_options['value'];
-        } elseif (isset($elm_options['name']) && isset($this->data_source[$elm_options['name']])) {
+        if (isset($elm_options['name']) && isset($this->data_source[$elm_options['name']])) {
             $default_value = $this->data_source[$elm_options['name']];
+        } elseif (isset($elm_options['value'])) {
+            $default_value = $elm_options['value'];
         }
         $elm_options['value'] = $this->adv_set_value($elm_options['name'], $default_value);
 
@@ -227,6 +232,8 @@ class Form_builder {
             case 'form_input':
                 $ret_string = form_input($elm_options);
                 break;
+            case 'form_hidden':
+                return form_hidden($elm_options['id'], $elm_options['value']);
             case 'form_dropdown':
                 /* form_dropdown is different than an input */
                 if (isset($elm_options['options']) && !empty($elm_options['options'])) {
@@ -282,10 +289,10 @@ class Form_builder {
     private function _pre_input() {
         return '<div class="' . $this->config['default_form_control_width'] . '">';
     }
-    
+
     private function _try_help_block($elm_options) {
         if (isset($elm_options['help']) && !empty($elm_options['help'])) {
-            return '<span class="help-block">' . $elm_options['help'] . '</span>'; 
+            return '<span class="help-block">' . $elm_options['help'] . '</span>';
         }
         return '';
     }
