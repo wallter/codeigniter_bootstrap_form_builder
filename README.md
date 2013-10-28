@@ -1,4 +1,4 @@
-Codeigniter Bootstrap Form Builder
+Codeigniter Bootstrap 3 Form Builder
 ======================
 
 CodeIgniter library to build form's styled with Bootstrap 3.
