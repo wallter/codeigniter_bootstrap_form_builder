@@ -87,5 +87,5 @@ Produces:
 4. Close The Form
 ==============
 ```
-	<?= $this->form_builder->close_form(); ?>
-	```
+<?= $this->form_builder->close_form(); ?>
+```
