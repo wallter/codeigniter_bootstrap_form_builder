@@ -59,7 +59,7 @@ $this->form_builder->build_form_horizontal(
             
 Produces:
 ```
-<form action="http://www.riiviva.me/admin/store/item/edit/3" method="post" accept-charset="utf-8" class="form-horizontal col-md-12">
+<form action="" method="post" accept-charset="utf-8" class="form-horizontal col-md-12">
      <div class="form-group">
          <label class="col-md-2 control-label" for="name">Name</label>
          <div class="col-md-9">
