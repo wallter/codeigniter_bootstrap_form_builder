@@ -46,7 +46,7 @@ Load the Codeigniter form helper, then load the form_builder library.
                     'type' => 'textarea',
                     'class' => 'wysihtml5',
                     'placeholder' => 'Item Description (HTML or rich text)',
-                    'value' => set_value('description', html_entity_decode($item->description))
+                    'value' =>html_entity_decode($item->description)
                 )
                     ), $defaults_object_or_array_from_db);
             ?>
