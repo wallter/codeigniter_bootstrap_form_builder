@@ -31,12 +31,22 @@ $this->load->library('form_builder');
 ==============
 
 ```
-<?=
-$this->form_builder->build_form_horizontal(
+<?
+echo $this->form_builder->build_form_horizontal(
         array(
+    array(
+        'id' => 'id',
+        'type' => 'hidden',
+        'value' => $item->id
+    ),
     array(/* INPUT */
-        'id' => 'name',
-        'placeholder' => 'Item Name',
+        'id' => 'color',
+        'placeholder' => 'Item Color',
+        'input_addons' => array(
+            'pre' => 'color: #',
+            'post' => ';'
+        ),
+        'help' => 'this is a help block'
     ),
     array(/* DROP DOWN */
         'id' => 'published',
@@ -52,6 +62,10 @@ $this->form_builder->build_form_horizontal(
         'class' => 'wysihtml5',
         'placeholder' => 'Item Description (HTML or rich text)',
         'value' => html_entity_decode($item->description)
+    ),
+    array(
+        'id' => 'submit',
+        'type' => 'submit'
     )
         ), $defaults_object_or_array_from_db);
 ?>
@@ -60,12 +74,18 @@ $this->form_builder->build_form_horizontal(
 Produces:
 ```
 <form action="" method="post" accept-charset="utf-8" class="form-horizontal col-md-12">
-     <div class="form-group">
-         <label class="col-md-2 control-label" for="name">Name</label>
-         <div class="col-md-9">
-             <input type="text" name="name" id="name" placeholder="Item Name" class="form-control"  />
-         </div>
-     </div>
+	<input id="id" type="hidden" name="id" value="33">
+         <div class="form-group">
+        <label class="col-md-2 control-label" for="name">Color</label>
+        <div class="col-md-9">
+            <div class="input-group">
+                <span class="input-group-addon">color: #</span>
+                <input type="text" name="color" value="" id="color" placeholder="Item Color" help="this is a help block" class="form-control">
+                <span class="input-group-addon">;</span>
+            </div>
+            <span class="help-block">this is a help block</span>
+        </div>
+    </div>
      <div class="form-group">
          <label class="col-md-2 control-label" for="name">Published</label>
          <div class="col-md-9">
@@ -81,8 +101,14 @@ Produces:
              <textarea name="description" cols="40" rows="10" id="description" class="form-control wysihtml5" placeholder="Item Description (HTML or rich text)" >HTML</textarea>
          </div>
      </div>
+     <div class="form-group">
+     	 <label class="col-md-2 control-label" for="name"></label>
+     	 <input type="submit" name="submit" value="Submit" class="form-control btn btn-primary">
+     </div>
  </form>   
  ```    
+ 
+ ![ScreenShot](https://raw.github.com/wallter/codeigniter_bootstrap_form_builder/master/images/form_render_screen_shot.png)
 
 4. Close The Form
 ==============

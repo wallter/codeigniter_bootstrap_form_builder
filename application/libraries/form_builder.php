@@ -18,7 +18,7 @@
  * @subpackage          Libraries
  * @category            Form Bilder
  * @author		Tyler Wall <tyler.r.wall@gmail.com>	
- * @version		0.6
+ * @version		0.7
  * @license		http://opensource.org/licenses/MIT MIT licensed.
  *
  * @todo		fix new bugs. Duh :D
@@ -33,7 +33,7 @@
 
   1. Load codeigniter 'form' helper       ---         $this->load->helper('form');
   2. Load this library                    ---         $this->load->library('form_builder');
-  3. Open your form (include the approprate class and col-md-* for formating
+  3. Open your form (you can now use `$this->form_builder->open_form(array('action' => 'www.example.com'));` )
   4. Echo out the output of the form_builder->build_*
   5. Close your form ('</form>').
   6. Enjoy easy forms
@@ -43,43 +43,85 @@
   <? $this->load->helper('form'); ?>
   <? $this->load->library('form_builder'); ?>
 
-  <form id="item_form" name="item_form" method="post" class="col-md-7 form-horizontal" action="">
-  <?=
-  $this->form_builder->build_form_horizontal(
-  array(
-  array(
-  'id' => 'name',
-  'placeholder' => 'Item Name',
-  ),
-  array(
-  'id' => 'subtitle',
-  'placeholder' => 'Subtitle'
-  )
-  ), $item);
-  ?>
-  </form>
+  <?= $this->form_builder->open_form(array('action' => 'www.example.com')); ?>
+      <?
+    echo $this->form_builder->build_form_horizontal(
+            array(
+        array(
+            'id' => 'id',
+            'type' => 'hidden',
+            'value' => $item->id
+        ),
+        array(
+            'id' => 'color',
+            'placeholder' => 'Item Color',
+            'input_addons' => array(
+                'pre' => 'color: #',
+                'post' => ';'
+            ),
+            'help' => 'this is a help block'
+        ),
+        array(
+            'id' => 'published',
+            'type' => 'dropdown',
+            'options' => array(
+                '1' => 'Published',
+                '2' => 'Disabled'
+            )
+        ),
+        array(
+            'id' => 'description',
+            'type' => 'textarea',
+            'class' => 'wysihtml5',
+            'placeholder' => 'Item Description (HTML or rich text)',
+            'value' => html_entity_decode($item->description)
+        ),
+        array(
+            'id' => 'submit',
+            'type' => 'submit'
+        )
+            ), $defaults_object_or_array_from_db);
+    ?>
+  <?= $this->form_builder->close_form(); ?>
  */
 class Form_builder {
 
-    private $config = array(
+    private $config = array(/* Config array - can be overrided by passing in array in ini() */
         'default_input_type' => 'form_input',
         'bootstrap_required_input_class' => 'form-control',
         'default_dropdown_class' => 'valid',
         'default_control_label_width' => 'col-md-2',
         'default_form_control_width' => 'col-md-9',
         'default_form_class' => 'form-horizontal col-md-12',
+        'default_submit_classes' => 'btn btn-primary'
     );
-    private $func;
-    private $data_source;
-    private $print_string = '';
+    private $func; /* Global function holder - used in switches */
+    private $data_source; /* Global holder for the source of the data */
+    private $print_string = ''; /* An output buffer */
+
+    /**
+     * @property array $input_addons  
+     * This is for adding input-groups and addons.
+     * pre/post do not have to be inputed as arrays but will be turned into ones
+     * so that we can handle multipal pre/post input addons.
+     */
+    private $input_addons = array(
+        'exists' => false, /* does the specific input have an addon? */
+        'pre' => array(), /* container for pre addons */
+        'post' => array() /* container for post addons */
+    );
 
     function __construct() {
         $this->func = $this->config['default_input_type'];
     }
 
-    function init($config) {
-        $this->config = $config;
-        $this->func = $this->config['default_input_type'];
+    function init($config = array()) {
+        if (!empty($config)) {
+            foreach ($config as $k => $v) {
+                $this->config[$k] = $v;
+            }
+            $this->func = $this->config['default_input_type'];
+        }
     }
 
     function open_form($options) {
@@ -135,13 +177,16 @@ class Form_builder {
         foreach ($options as $elm_options) {
             if (is_array($elm_options)) {
                 $this->_prep_options($elm_options);
-                if ($this->func == 'form_hidden') {
-                    $this->print_string .= $this->_build_input($elm_options);
-                } else {
-                    $this->print_string .= $this->_pre_elm();
-                    $this->print_string .= $this->_label($elm_options);
-                    $this->print_string .= $this->_build_input($elm_options);
-                    $this->print_string .= $this->_post_elm();
+                switch ($this->func) {
+                    case 'form_hidden':
+                        $this->print_string .= $this->_build_input($elm_options);
+                        break;
+                    default:
+                        $this->print_string .= $this->_pre_elm();
+                        $this->print_string .= $this->_label($elm_options);
+                        $this->print_string .= $this->_build_input($elm_options);
+                        $this->print_string .= $this->_post_elm();
+                        break;
                 }
             }
         }
@@ -149,6 +194,12 @@ class Form_builder {
     }
 
     private function _prep_options(&$elm_options) {
+        foreach ($elm_options as &$opt) {
+            /* trying again to change everything to an array */
+            if (is_object($opt)) {
+                $opt = (array) $opt;
+            }
+        }
         $this->func = $this->config['default_input_type'];
         /* Pull the input type from the array */
         if (isset($elm_options['type'])) {
@@ -189,6 +240,48 @@ class Form_builder {
         }
         $elm_options['value'] = $this->adv_set_value($elm_options['name'], $default_value);
 
+
+        /* ====== Handle input_addons ======== */
+
+        /* FIRST - clear the input_addons global array from any previous elemets */
+        $this->input_addons = array(
+            'exists' => false,
+            'pre' => array(),
+            'post' => array()
+        );
+
+        /* playing nice: handling the singular case */
+        if (isset($elm_options['input_addon'])) {
+            $elm_options['input_addons'] = $elm_options['input_addon'];
+            unset($elm_options['input_addon']);
+        }
+
+        /* set the new input_addons array */
+        if (isset($elm_options['input_addons']) && !empty($elm_options['input_addons'])) {
+            /* there are input addons */
+            $this->input_addons['exists'] = true;
+
+            /* check for pre addons */
+            if (isset($elm_options['input_addons']['pre']) && !empty($elm_options['input_addons']['pre'])) {
+                $pre = $elm_options['input_addons']['pre'];
+                if (!is_array($pre)) { /* to handle more than one, this needs to be an array - but should handle the easy case of one string */
+                    $pre = array($pre);
+                }
+                $this->input_addons['pre'] = $pre;
+            }
+
+            /* then check for post addons */
+            if (isset($elm_options['input_addons']['post']) && !empty($elm_options['input_addons']['post'])) {
+                $post = $elm_options['input_addons']['post'];
+                if (!is_array($post)) { /* to handle more than one, this needs to be an array - but should handle the easy case of one string */
+                    $post = array($post);
+                }
+                $this->input_addons['post'] = $post;
+            }
+
+            /* unset it so that no funky stuff happens */
+            unset($elm_options['input_addons']);
+        }
         return;
     }
 
@@ -227,13 +320,29 @@ class Form_builder {
      */
 
     private function _build_input($elm_options) {
-        $ret_string = '';
+        $input_html_string = '';
         switch ($this->func) {
             case 'form_input':
-                $ret_string = form_input($elm_options);
+                $input_html_string = form_input($elm_options);
                 break;
             case 'form_hidden':
                 return form_hidden($elm_options['id'], $elm_options['value']);
+            case 'form_submit':
+                $name = $elm_options['id'];
+                $label = $this->_make_label((isset($elm_options['label']) ? $elm_options['label'] : $elm_options['id']));
+
+                unset($elm_options['id']);
+                unset($elm_options['label']);
+                unset($elm_options['name']);
+
+                $class = str_replace($this->config['default_submit_classes'], '', $elm_options['class']);
+                /* add class="valid" to all dropdowns (makes them not full width - and works better with select2 plugin) */
+                if (strpos($class, $this->config['default_submit_classes']) === FALSE) {
+                    $class .= ' ' . $this->config['default_submit_classes'];
+                }
+                $elm_options['class'] = $class;
+
+                return form_submit($name, $label, $this->_create_extra_string($elm_options));
             case 'form_dropdown':
                 /* form_dropdown is different than an input */
                 if (isset($elm_options['options']) && !empty($elm_options['options'])) {
@@ -254,16 +363,45 @@ class Form_builder {
                         $elm_options['class'] = $class;
                     }
 
-                    $ret_string = form_dropdown($name, $options, $value, $this->_create_extra_string($elm_options));
+                    $input_html_string = form_dropdown($name, $options, $value, $this->_create_extra_string($elm_options));
                 } else {
                     show_error('Tried to create `form_dropdown` with no options. (id="' . $elm_options['name'] . '")');
                 }
                 break;
             default:
-                $ret_string = call_user_func($this->func, $elm_options);
+                $input_html_string = call_user_func($this->func, $elm_options);
                 break;
         }
-        return $this->_pre_input() . $ret_string . $this->_try_help_block($elm_options) . $this->_post_input();
+        $ret_string = '';
+        $ret_string .= $this->_pre_input();
+        $ret_string .= $this->_build_input_addons_pre();
+        $ret_string .= $input_html_string;
+        $ret_string .= $this->_build_input_addons_post();
+        $ret_string .= $this->_build_help_block($elm_options);
+        $ret_string .= $this->_post_input();
+        return $ret_string;
+    }
+
+    private function _build_input_addons_pre() {
+        $ret_string = '';
+        if ($this->input_addons['exists']) {
+            $ret_string .= '<div class="input-group">';
+            foreach ($this->input_addons['pre'] as $pre_addon) {
+                $ret_string .= '<span class="input-group-addon">' . $pre_addon . '</span>';
+            }
+        }
+        return $ret_string;
+    }
+
+    private function _build_input_addons_post() {
+        $ret_string = '';
+        if ($this->input_addons['exists']) {
+            foreach ($this->input_addons['post'] as $post_addon) {
+                $ret_string .= '<span class="input-group-addon">' . $post_addon . '</span>';
+            }
+            $ret_string .= '</div>';
+        }
+        return $ret_string;
     }
 
     private function _create_extra_string($elm_options) {
@@ -290,7 +428,7 @@ class Form_builder {
         return '<div class="' . $this->config['default_form_control_width'] . '">';
     }
 
-    private function _try_help_block($elm_options) {
+    private function _build_help_block($elm_options) {
         if (isset($elm_options['help']) && !empty($elm_options['help'])) {
             return '<span class="help-block">' . $elm_options['help'] . '</span>';
         }
@@ -305,10 +443,14 @@ class Form_builder {
         $label = '';
         if (isset($elm_options['label'])) {
             $label = $elm_options['label'];
-        } elseif (isset($elm_options['id'])) {
-            $label = ucwords(str_replace(array('_', '-', '[', ']'), array(' ', ' ', ' ', ' '), $elm_options['id']));
+        } elseif (isset($elm_options['id']) && $this->func != 'form_submit') {
+            $label = $this->_make_label($elm_options['id']);
         }
         return '<label class="' . $this->config['default_control_label_width'] . ' control-label" for="name">' . $label . '</label>';
+    }
+
+    private function _make_label($str) {
+        return ucwords(str_replace(array('_', '-', '[', ']'), array(' ', ' ', ' ', ' '), $str));
     }
 
     private function _reset_builder() {
