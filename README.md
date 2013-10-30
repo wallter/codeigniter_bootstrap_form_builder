@@ -1,6 +1,15 @@
 Codeigniter Bootstrap 3 Form Builder
 ======================
 
+Do you want to write forms 60% faster? 
+---------------------
+Or type 60% less? 
+---------------------
+Are you using Codegniter and Bootstrap 3?
+---------------------
+Then this is the plugin for you!
+---------------------
+
 CodeIgniter library to build form's styled with Bootstrap 3.
 It's got 3 steps:
 *	Load Libraries
