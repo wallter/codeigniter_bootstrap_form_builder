@@ -63,10 +63,11 @@ class Form_builder {
 
     private $config = array(/* Config array - can be overrided by passing in array in ini() */
         'default_input_type' => 'form_input',
+        'default_input_container_class' => 'form-group',
         'bootstrap_required_input_class' => 'form-control',
         'default_dropdown_class' => 'valid',
-        'default_control_label_width' => 'col-md-2',
-        'default_form_control_width' => 'col-md-9',
+        'default_control_label_class' => 'col-md-2 control-label',
+        'default_form_control_class' => 'col-md-9',
         'default_form_class' => 'form-horizontal col-md-12',
         'default_submit_classes' => 'btn btn-primary',
         'default_date_post_addon' => '<span class="input-group-btn"><button class="btn default" type="button"><i class="fa fa-calendar"></i></button></span>'
@@ -127,6 +128,53 @@ class Form_builder {
         return form_close();
     }
 
+    function auto_db_to_options($ary) {
+        $options = array();
+
+        foreach ($ary as $k => $v) {
+            $elm_options = array(
+                'id' => $k,
+                'value' => $v
+            );
+
+            /*
+             * TODO: this should be put in the options. It is suited specificaly for my database
+             * configuration and my practices - which include having a 'id', 'modified', 'created', and 'active'
+             * column in *ALL* databases - as well as some specific data.
+             * 
+             * NOTE: This function will likely see a lot of change to make sure it is working and/or re-built
+             * 'the right way' 
+             */
+            if (is_json($v)) {
+                $elm_options['type'] = 'json';
+            } else {
+                switch ($k) {
+                    case 'id':
+                        $elm_options['readonly'] = 'readonly';
+                        break;
+
+                    case 'modified':
+                    case 'created':
+                        $elm_options['type'] = 'date';
+                        $elm_options['readonly'] = 'readonly';
+                        break;
+
+                    case 'active':
+                        $elm_options['type'] = 'dropdown';
+                        $elm_options['options'] = array(
+                            '1' => 'Active',
+                            '0' => 'De-Active'
+                        );
+                        $elm_options['readonly'] = 'readonly';
+                        break;
+                }
+            }
+            $options[] = $elm_options;
+        }
+
+        return $options;
+    }
+
     /**
      * Build From  Horizontal
      * @access	public
@@ -141,18 +189,6 @@ class Form_builder {
     function build_form_horizontal($options, $data_source = array()) {
         $this->_reset_builder();
         $this->data_source = (array) $data_source;
-
-        /* untested */
-        if (is_object($options)) {
-            $options = (array) $options;
-        }
-        if (!is_array($options)) {
-            if (!empty($options)) {
-                $options = $tmp[] = array($options);
-            } else {
-                return;
-            }
-        }
 
         foreach ($options as $elm_options) {
             $this->elm_options = $elm_options;
@@ -172,7 +208,45 @@ class Form_builder {
                 }
             }
         }
-        return $this->print_string;
+        return $this->squish_HTML($this->print_string);
+    }
+
+    /**
+     * Function build_display
+     * 
+     * Function is to build a viewable form using the easy form builder.
+     * Includes token form_open and form_close just to make sure all the styling
+     * works correctly. 
+     * 
+     * @param array $options - the elements/options for the form elemnts being built.
+     * @param array/object $data_source - a default source for the value
+     * @return string - the elements 
+     */
+    function build_display($options, $data_source = array()) {
+        $this->_reset_builder();
+        $this->data_source = (array) $data_source;
+
+        /* styling prefrence */
+        $this->config['default_control_label_class'] .= ' bold';
+
+        $this->print_string .= $this->_build_form_open('', array('class' => $this->config['default_form_class']));
+
+        foreach ($options as $elm_options) {
+            $this->elm_options = $elm_options;
+
+            if (is_array($this->elm_options)) {
+                $this->_prep_options();
+                if ($this->func != 'form_json') {
+                    $this->func = 'form_label'; /* The only difference */
+                }
+                $this->print_string .= $this->_pre_elm();
+                $this->print_string .= $this->_label();
+                $this->print_string .= $this->_build_input();
+                $this->print_string .= $this->_post_elm();
+            }
+        }
+        $this->print_string .= $this->close_form();
+        return $this->squish_HTML($this->print_string);
     }
 
     private function _prep_options() {
@@ -311,6 +385,10 @@ class Form_builder {
 
         return form_prep($OBJ->set_value($field, $default), $field);
     }
+    
+    function squish_HTML($html) {
+        return str_replace(array("\r\n", "\r", "\n"), "", $html);
+    }
 
     /*
       ===============================================================================================
@@ -321,6 +399,19 @@ class Form_builder {
     private function _build_input() {
         $input_html_string = '';
         switch ($this->func) {
+            /*
+             * This should eventualy be expanded to be able to edit individual elements in the k=>v 
+             * For now it will just display them.
+             */
+            case 'form_json':
+                $kv_str = '';
+                $input_html_string = $this->_recursive_build_json((array) json_decode($this->elm_options['value']));
+                break;
+            case 'form_label':
+                $input_html_string = form_label($this->_make_label($this->elm_options['value']), '', array(
+                    'class' => ' control-label'
+                ));
+                break;
             case 'form_date':
                 $this->input_addons['exists'] = true;
                 $this->input_addons['post_html'] = $this->config['default_date_post_addon'];
@@ -330,11 +421,16 @@ class Form_builder {
                 } else {
                     $this->elm_options['value'] = date("Y-m-d", strtotime($this->elm_options['value']));
                 }
-
-            //    <div class="input-group input-medium date date-picker" data-date="2013-10-31" data-date-format="yyyy-mm-dd" data-date-viewmode="years">
-//        <input type="text" class="form-control valid" name="stock_status_id" readonly="" value="2013-10-31">
-//        <span class="input-group-btn"><button class="btn default" type="button"><i class="fa fa-calendar"></i></button></span>
-//    </div>
+                $input_html_string = form_input($this->elm_options);
+                break;
+            case 'form_email':
+                $this->elm_options['type'] = 'email';
+                $input_html_string = form_input($this->elm_options);
+                break;
+            case 'form_tel':
+                $this->elm_options['type'] = 'tel';
+                $input_html_string = form_input($this->elm_options);
+                break;
             case 'form_input':
                 $input_html_string = form_input($this->elm_options);
                 break;
@@ -375,7 +471,7 @@ class Form_builder {
                         if (strpos($class, $this->config['default_dropdown_class']) === FALSE) {
                             $class .= ' ' . $this->config['default_dropdown_class'];
                         }
-                        $this->elm_options['class'] = $class;
+                        $this->elm_options['class'] = trim($class) . ' input-medium';
                     }
 
                     $input_html_string = form_dropdown($name, $options, $value, $this->_create_extra_string());
@@ -442,18 +538,18 @@ class Form_builder {
     }
 
     private function _pre_elm() {
-        return '<div class="form-group">';
+        return '<div class="' . $this->config['default_input_container_class'] . '">';
     }
 
     private function _post_elm() {
-        return '<div class="clearfix"></div></div>';
+        return '</div>';
     }
 
     private function _pre_input() {
         if ($this->func == 'form_date') {
-        return '<div class="input-group date date-picker" data-date="' . $this->elm_options['value'] . '" data-date-format="yyyy-mm-dd" data-date-viewmode="years">';
+            return '<div class="input-group date date-picker ' . $this->config['default_form_control_class'] . '" data-date="' . $this->elm_options['value'] . '" data-date-format="yyyy-mm-dd" data-date-viewmode="years">';
         }
-        return '<div class="' . $this->config['default_form_control_width'] . '">';
+        return '<div class="' . $this->config['default_form_control_class'] . '">';
     }
 
     private function _build_help_block() {
@@ -474,7 +570,10 @@ class Form_builder {
         } elseif (isset($this->elm_options['id']) && $this->func != 'form_submit') {
             $label = $this->_make_label($this->elm_options['id']);
         }
-        return '<label class="' . $this->config['default_control_label_width'] . ' control-label" for="name">' . $label . '</label>';
+
+        return form_label($label, $this->elm_options['name'], array(
+            'class' => $this->config['default_control_label_class']
+        ));
     }
 
     private function _make_label($str) {
@@ -484,6 +583,26 @@ class Form_builder {
     private function _reset_builder() {
         $this->print_string = '';
         $this->func = $this->config['default_input_type'];
+    }
+
+    private function _recursive_build_json($ary, $offset = 0) {
+        $kv_str = '';
+        foreach ($ary as $k => $v) {
+            /* This offset class doesn't look that great :/ ' */
+            $offset_class = '';
+            if ($offset >= 1) {
+                $offset_class = 'col-md-offset-' . $offset;
+            }
+
+            if ((is_array($v) || is_object($v)) && !is_string($v)) {
+                $new_offset = $offset + 1;
+                $innter_str = $this->_recursive_build_json((array) $v, $new_offset);
+                $kv_str .= '<div class="' . $offset_class . '"><strong>' . ucwords(strtolower(str_replace(array('_', '-'), ' ', $k))) . '</strong>' . $innter_str . '</div>';
+            } else {
+                $kv_str .= '<div class="' . $offset_class . '"><strong>' . ucwords(strtolower(str_replace(array('_', '-'), ' ', $k))) . '</strong>: ' . $v . '</div>';
+            }
+        }
+        return $kv_str;
     }
 
     /*
