@@ -1,0 +1,128 @@
+<?
+/**
+ * Bootstrap 3 Credit Card
+ * 
+ * Impliments autocomplete standard.
+ *      IETF RFC3106:           http://www.ietf.org/rfc/rfc3106.txt
+ *      Living HTML Standard:   http://www.whatwg.org/specs/web-apps/current-work/multipage/association-of-controls-and-forms.html#autofill-field
+ * 
+ * @pram string $input_span - this is a varable class that can be used to specify the width 
+ *      class of the input fields to make the form fit in tighter spots
+ * 
+ *  -----------------------------
+ * Call this view as folows:
+ * echo $this->load->view('store/template/bootstrap_3_credit_card', array('input_span' => 'col-md-3');
+ * 
+ */
+
+$input_span = (isset($input_span)) ? $input_span . ' ' : '';
+
+/* Begin building form */
+
+$yearRange = 10;
+$thisYear = date('Y');
+$startYear = ($thisYear + 10);
+
+$exp_year_options = array();
+foreach (range($thisYear, $startYear) as $year) {
+    $exp_year_options[$year] = $year;
+}
+
+$form_options = array(
+    array(
+        'id' => 'cc_owner',
+        'label' => 'Name',
+        'placeholder' => 'The Name on the Credit Card',
+        'class' => $input_span . 'required',
+        'required' => '',
+        'autocomplete' => 'cc-name',
+        'value' => isset($cc_owner) ? $cc_owner : ''
+    ),
+    array(
+        'id' => 'cc_type',
+        'label' => 'Card Type',
+        'type' => 'dropdown',
+        'options' => array(
+            'visa' => 'Visa',
+            'master card' => 'Master Card',
+            'discover' => 'Discover',
+            'american express' => 'American Express'
+        ),
+        'autocomplete' => 'cc-type',
+        'class' => $input_span . 'required input-medium',
+        'required' => '',
+        'value' => isset($cc_type) ? $cc_type : ''
+    ),
+    array(
+        'id' => 'cc_number',
+        'label' => 'Card Number',
+        'autocomplete' => 'cc-number',
+        'class' => $input_span . 'required',
+        'required' => '',
+        'maxlength' => '19',
+        'minlength' => '12',
+        'pattern' => '(\d\s?){13,16}',
+        'value' => isset($cc_number) ? $cc_number : ''
+    ),
+    array(
+        'id' => 'experation_date',
+        'type' => 'combine',
+        'elements' => array(
+            array(
+                'id' => 'cc_exp_month',
+                'label' => 'Expiration Date',
+                'autocomplete' => 'cc-exp-month',
+                'type' => 'dropdown',
+                'options' => array(
+                    '01' => '01 - Jan',
+                    '02' => '02 - Feb',
+                    '03' => '03 - Mar',
+                    '04' => '04 - Apr',
+                    '05' => '05 - May',
+                    '06' => '06 - June',
+                    '07' => '07 - July',
+                    '08' => '08 - Aug',
+                    '09' => '09 - Sept',
+                    '10' => '10 - Oct',
+                    '11' => '11 - Nov',
+                    '12' => '12 - Dec'
+                ),
+                'class' => $input_span . 'required input-small',
+                'required' => '',
+                'data-items' => '4',
+                'pattern' => '\d{1,2}',
+                'style' => 'width: auto;',
+                'value' => (isset($cc_exp_month) ? $cc_exp_month : '')
+            ),
+            array(
+                'id' => 'cc_exp_year',
+                'label' => 'Expiration Date',
+                'autocomplete' => 'cc-exp-year',
+                'type' => 'dropdown',
+                'options' => $exp_year_options,
+                'class' => $input_span . 'required input-small',
+                'required' => '',
+                'data-items' => '4',
+                'pattern' => '\d{4}',
+                'style' => 'width: auto; margin-left: 5px;',
+                'value' => (isset($cc_exp_year) ? $cc_exp_year : '')
+            )
+        )
+    ),
+    array(
+        'id' => 'cc_cid',
+        'label' => 'CSC',
+        'autocomplete' => 'cc-csc',
+        'placeholder' => 'CSC',
+        'maxlength' => '4',
+        'minlength' => '3',
+        'class' => $input_span . 'required input-small',
+        'required' => '',
+        'style' => 'width: 3em;',
+        'pattern' => '\d+',
+        'value' => isset($cc_cid) ? $cc_cid : ''
+    )
+);
+echo $this->form_builder->build_form_horizontal($form_options);
+?>
+
