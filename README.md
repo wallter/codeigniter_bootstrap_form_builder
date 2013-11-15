@@ -69,6 +69,38 @@ echo $this->form_builder->build_form_horizontal(
         'value' => html_entity_decode($item->description)
     ),
     array(
+        'id' => 'experation_date',
+        'type' => 'combine', /* use `combine` to put several input inside the same block */
+        'elements' => array(
+            array(
+                'id' => 'cc_exp_month',
+                'label' => 'Expiration Date',
+                'autocomplete' => 'cc-exp-month',
+                'type' => 'dropdown',
+                'options' => $exp_month_options,
+                'class' => $input_span . 'required input-small',
+                'required' => '',
+                'data-items' => '4',
+                'pattern' => '\d{1,2}',
+                'style' => 'width: auto;',
+                'value' => (isset($cc_exp_month) ? $cc_exp_month : '')
+            ),
+            array(
+                'id' => 'cc_exp_year',
+                'label' => 'Expiration Date',
+                'autocomplete' => 'cc-exp-year',
+                'type' => 'dropdown',
+                'options' => $exp_year_options,
+                'class' => $input_span . 'required input-small',
+                'required' => '',
+                'data-items' => '4',
+                'pattern' => '\d{4}',
+                'style' => 'width: auto; margin-left: 5px;',
+                'value' => (isset($cc_exp_year) ? $cc_exp_year : '')
+            )
+        )
+    ),
+    array(
         'id' => 'submit',
         'type' => 'submit'
     )

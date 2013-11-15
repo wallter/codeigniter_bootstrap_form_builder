@@ -385,7 +385,7 @@ class Form_builder {
 
         return form_prep($OBJ->set_value($field, $default), $field);
     }
-    
+
     function squish_HTML($html) {
         return str_replace(array("\r\n", "\r", "\n"), "", $html);
     }
@@ -396,102 +396,124 @@ class Form_builder {
       ===============================================================================================
      */
 
-    private function _build_input() {
+    private function _build_input($include_pre_post = true) {
         $input_html_string = '';
-        switch ($this->func) {
-            /*
-             * This should eventualy be expanded to be able to edit individual elements in the k=>v 
-             * For now it will just display them.
-             */
-            case 'form_json':
-                $kv_str = '';
-                $input_html_string = $this->_recursive_build_json((array) json_decode($this->elm_options['value']));
-                break;
-            case 'form_label':
-                $input_html_string = form_label($this->_make_label($this->elm_options['value']), '', array(
-                    'class' => ' control-label'
-                ));
-                break;
-            case 'form_date':
-                $this->input_addons['exists'] = true;
-                $this->input_addons['post_html'] = $this->config['default_date_post_addon'];
+        /* Combine elements have multiple input elements on the same line.
+         * This block will call this function, '_build_input' call recursivly.
+         * 
+         * Example use: Credit Card EXP month/year
+         */
+        if ($this->func == 'form_combine') {
+            if (!isset($this->elm_options['elements'])) {
+                dump($this->elm_options);
+                show_error('Tried to create `form_combine` with no elements. (id="' . $this->elm_options['name'] . '")');
+            }
+            $elm_options_backup = $this->elm_options; /* We need to make a copy for everything to work correctly */
 
-                if (empty($this->elm_options['value'])) {
-                    $this->elm_options['value'] = date('Y-m-d', strtotime('today'));
-                } else {
-                    $this->elm_options['value'] = date("Y-m-d", strtotime($this->elm_options['value']));
-                }
-                $input_html_string = form_input($this->elm_options);
-                break;
-            case 'form_email':
-                $this->elm_options['type'] = 'email';
-                $input_html_string = form_input($this->elm_options);
-                break;
-            case 'form_tel':
-                $this->elm_options['type'] = 'tel';
-                $input_html_string = form_input($this->elm_options);
-                break;
-            case 'form_input':
-                $input_html_string = form_input($this->elm_options);
-                break;
-            case 'form_hidden':
-                return form_hidden($this->elm_options['id'], $this->elm_options['value']);
-            case 'form_submit':
-                $name = $this->elm_options['id'];
-                $label = $this->_make_label((isset($this->elm_options['label']) ? $this->elm_options['label'] : $this->elm_options['id']));
+            foreach ($elm_options_backup['elements'] as $elm) {
+                $this->elm_options = $elm; /* We override elm_options */
+                $this->_prep_options(); /* Run Prep on the new one */
+                $input_html_string .= $this->_build_input(false);
+            }
 
-                unset($this->elm_options['id']);
-                unset($this->elm_options['label']);
-                unset($this->elm_options['name']);
+            $this->elm_options = $elm_options_backup; /* We put our options back */
+            $this->_prep_options(); /* Run Prep to restore the state in which we begain */
+        } else {
+            switch ($this->func) {
+                /*
+                 * This should eventualy be expanded to be able to edit individual elements in the k=>v 
+                 * For now it will just display them.
+                 */
+                case 'form_json':
+                    $kv_str = '';
+                    $input_html_string = $this->_recursive_build_json((array) json_decode($this->elm_options['value']));
+                    break;
+                case 'form_label':
+                    $input_html_string = form_label($this->_make_label($this->elm_options['value']), '', array(
+                        'class' => ' control-label'
+                    ));
+                    break;
+                case 'form_date':
+                    $this->input_addons['exists'] = true;
+                    $this->input_addons['post_html'] = $this->config['default_date_post_addon'];
 
-                $class = str_replace($this->config['default_submit_classes'], '', $this->elm_options['class']);
-                $class = str_replace($this->config['bootstrap_required_input_class'], '', $this->elm_options['class']); /* remove the 'form-control' class */
-                /* add class="valid" to all dropdowns (makes them not full width - and works better with select2 plugin) */
-                if (strpos($class, $this->config['default_submit_classes']) === FALSE) {
-                    $class .= ' ' . $this->config['default_submit_classes'];
-                }
-                $this->elm_options['class'] = trim($class);
-
-                $input_html_string = form_submit($name, $label, $this->_create_extra_string($this->elm_options));
-                break;
-            case 'form_dropdown':
-                /* form_dropdown is different than an input */
-                if (isset($this->elm_options['options']) && !empty($this->elm_options['options'])) {
-                    $name = $this->elm_options['name'];
-                    $options = $this->elm_options['options'];
-                    $value = $this->elm_options['value'];
-
-                    unset($this->elm_options['name']);
-                    unset($this->elm_options['value']);
-                    unset($this->elm_options['options']);
-
-                    if (!empty($this->config['default_dropdown_class'])) {
-                        $class = str_replace($this->config['bootstrap_required_input_class'], '', $this->elm_options['class']);
-                        /* add class="valid" to all dropdowns (makes them not full width - and works better with select2 plugin) */
-                        if (strpos($class, $this->config['default_dropdown_class']) === FALSE) {
-                            $class .= ' ' . $this->config['default_dropdown_class'];
-                        }
-                        $this->elm_options['class'] = trim($class) . ' input-medium';
+                    if (empty($this->elm_options['value'])) {
+                        $this->elm_options['value'] = date('Y-m-d', strtotime('today'));
+                    } else {
+                        $this->elm_options['value'] = date("Y-m-d", strtotime($this->elm_options['value']));
                     }
+                    $input_html_string = form_input($this->elm_options);
+                    break;
+                case 'form_email':
+                    $this->elm_options['type'] = 'email';
+                    $input_html_string = form_input($this->elm_options);
+                    break;
+                case 'form_tel':
+                    $this->elm_options['type'] = 'tel';
+                    $input_html_string = form_input($this->elm_options);
+                    break;
+                case 'form_input':
+                    $input_html_string = form_input($this->elm_options);
+                    break;
+                case 'form_hidden':
+                    return form_hidden($this->elm_options['id'], $this->elm_options['value']);
+                case 'form_submit':
+                    $name = $this->elm_options['id'];
+                    $label = $this->_make_label((isset($this->elm_options['label']) ? $this->elm_options['label'] : $this->elm_options['id']));
 
-                    $input_html_string = form_dropdown($name, $options, $value, $this->_create_extra_string());
-                } else {
-                    dump($this->elm_options);
-                    show_error('Tried to create `form_dropdown` with no options. (id="' . $this->elm_options['name'] . '")');
-                }
-                break;
-            default:
-                $input_html_string = call_user_func($this->func, $this->elm_options);
-                break;
+                    unset($this->elm_options['id']);
+                    unset($this->elm_options['label']);
+                    unset($this->elm_options['name']);
+
+                    $class = str_replace($this->config['default_submit_classes'], '', $this->elm_options['class']);
+                    $class = str_replace($this->config['bootstrap_required_input_class'], '', $this->elm_options['class']); /* remove the 'form-control' class */
+                    /* add class="valid" to all dropdowns (makes them not full width - and works better with select2 plugin) */
+                    if (strpos($class, $this->config['default_submit_classes']) === FALSE) {
+                        $class .= ' ' . $this->config['default_submit_classes'];
+                    }
+                    $this->elm_options['class'] = trim($class);
+
+                    $input_html_string = form_submit($name, $label, $this->_create_extra_string($this->elm_options));
+                    break;
+                case 'form_dropdown':
+                    /* form_dropdown is different than an input */
+                    if (isset($this->elm_options['options']) && !empty($this->elm_options['options'])) {
+                        $name = $this->elm_options['name'];
+                        $options = $this->elm_options['options'];
+                        $value = $this->elm_options['value'];
+
+                        unset($this->elm_options['name']);
+                        unset($this->elm_options['value']);
+                        unset($this->elm_options['options']);
+
+                        if (!empty($this->config['default_dropdown_class'])) {
+                            $class = str_replace($this->config['bootstrap_required_input_class'], '', $this->elm_options['class']);
+                            /* add class="valid" to all dropdowns (makes them not full width - and works better with select2 plugin) */
+                            if (strpos($class, $this->config['default_dropdown_class']) === FALSE) {
+                                $class .= ' ' . $this->config['default_dropdown_class'];
+                            }
+                            $this->elm_options['class'] = trim($class);
+                        }
+
+                        $input_html_string = form_dropdown($name, $options, $value, $this->_create_extra_string());
+                    } else {
+                        dump($this->elm_options);
+                        show_error('Tried to create `form_dropdown` with no options. (id="' . $this->elm_options['name'] . '")');
+                    }
+                    break;
+                default:
+                    $input_html_string = call_user_func($this->func, $this->elm_options);
+                    break;
+            }
         }
-
         $ret_string = '';
-        $ret_string .= $this->_pre_input();
+        $ret_string .= ($include_pre_post) ? $this->_pre_input() : '';
         $ret_string .= $this->_build_input_addons_pre();
         $ret_string .= $input_html_string;
         $ret_string .= $this->_build_input_addons_post();
-        $ret_string .= $this->_build_help_block();
-        $ret_string .= $this->_post_input();
+        $ret_string .= ($include_pre_post) ? $this->_build_help_block() : '';
+        $ret_string .= ($include_pre_post) ? $this->_post_input() : '';
+        
         return $ret_string;
     }
 
