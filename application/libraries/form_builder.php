@@ -1,4 +1,4 @@
-<?
+<?php
 
 // -------------------------------------------------------------------------------------------------
 /**
@@ -66,7 +66,7 @@ class Form_builder {
         'default_input_container_class' => 'form-group',
         'bootstrap_required_input_class' => 'form-control',
         'default_dropdown_class' => 'valid',
-        'default_control_label_class' => 'col-md-2 control-label',
+        'default_control_label_class' => 'col-md-3 control-label',
         'default_form_control_class' => 'col-md-9',
         'default_form_class' => 'form-horizontal col-md-12',
         'default_submit_classes' => 'btn btn-primary',
@@ -459,9 +459,8 @@ class Form_builder {
                     return form_hidden($this->elm_options['id'], $this->elm_options['value']);
                 case 'form_submit':
                     $name = $this->elm_options['id'];
-                    $label = $this->_make_label((isset($this->elm_options['label']) ? $this->elm_options['label'] : $this->elm_options['id']));
-
-                    unset($this->elm_options['id']);
+                    $value = $this->elm_options['value'];
+                    
                     unset($this->elm_options['label']);
                     unset($this->elm_options['name']);
 
@@ -473,7 +472,7 @@ class Form_builder {
                     }
                     $this->elm_options['class'] = trim($class);
 
-                    $input_html_string = form_submit($name, $label, $this->_create_extra_string($this->elm_options));
+                    $input_html_string = form_submit($name, $value, $this->_create_extra_string($this->elm_options));
                     break;
                 case 'form_dropdown':
                     /* form_dropdown is different than an input */
@@ -599,7 +598,7 @@ class Form_builder {
     }
 
     private function _make_label($str) {
-        return ucwords(str_replace(array('_', '-', '[', ']'), array(' ', ' ', ' ', ' '), $str));
+        return str_replace(array('_', '[', ']'), array(' ', ' ', ' '), $str);
     }
 
     private function _reset_builder() {
