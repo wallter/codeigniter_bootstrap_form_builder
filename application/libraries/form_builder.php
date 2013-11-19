@@ -18,7 +18,7 @@
  * @subpackage          Libraries
  * @category            Form Bilder
  * @author		Tyler Wall <tyler.r.wall@gmail.com>	
- * @version		0.6
+ * @version		0.8.2
  * @license		http://opensource.org/licenses/MIT MIT licensed.
  *
  * @todo		fix new bugs. Duh :D
@@ -120,6 +120,7 @@ class Form_builder {
             $class = $options['class'];
         }
         $options['class'] = $class;
+        $options['autocomplete'] = 'on';
 
         return $this->_build_form_open($action, $options);
     }
@@ -128,7 +129,28 @@ class Form_builder {
         return form_close();
     }
 
-    function auto_db_to_options($ary) {
+    /**
+     * 
+     * @param array $ary - an array from the DB. Format: $k => $v
+     * @param array $custom_options - optional, an array that will override
+     * the default values produced by this funciton
+     * @return an array compatible with this class's `build_*` funcitons
+     * @ussage
+     *      $coupon_form_options = $this->form_builder->auto_db_to_options($coupon, array(
+     *           'code' => array(
+     *               'help' => 'The code the customer enters to get the discount'
+     *           ),
+     *           'type' => array(
+     *               'help' => 'Percentage or Fixed Amount',
+     *               'type' => 'dropdown',
+     *               'options' => array(
+     *                   'P' => 'Percentage',
+     *                   'F' => 'Fixed Amount'
+     *               )
+     *           )
+     *       ));
+     */
+    function auto_db_to_options($ary, $custom_options = array()) {
         $options = array();
 
         foreach ($ary as $k => $v) {
@@ -169,10 +191,47 @@ class Form_builder {
                         break;
                 }
             }
+
+            /* We need to override what was 'auto' created - Note: should always be done last */
+            if (isset($custom_options) && isset($custom_options[$k])) {
+                $elm_options = array_merge($elm_options, $custom_options[$k]);
+            }
+
             $options[] = $elm_options;
         }
 
         return $options;
+    }
+
+    /**
+     * 
+     * @param array $pre_built - the array that was pre-built using `auto_db_to_options`
+     * @param string $id - the id/name of the element to add to
+     * @param array $vals_ary - an array of new (or over-riding) values
+     * @return none
+     * 
+     * @ussage
+     *      $this->form_builder->change_pre_built($coupon_form_options, 'type', array(
+     *           'help' => 'Percentage or Fixed Amount',
+     *           'type' => 'dropdown',
+     *           'options' => array(
+     *               'P' => 'Percentage',
+     *               'F' => 'Fixed Amount'
+     *           )
+     *       ));
+     * 
+     * @notes The same effect can be gained when calling `auto_db_to_options` and passing
+     * the 2nd paramater ($custom_options). But this is for the event that you need to do 
+     * custom / advanced changes.
+     */
+    function change_pre_built(&$pre_built, $id, $vals_ary) {
+        foreach ($pre_built as $k => $v) {
+            if ($v['id'] == $id) {
+                $pre_built[$k] = array_merge($pre_built[$k], $vals_ary);
+                break;
+            }
+        }
+        return;
     }
 
     /**
@@ -513,7 +572,7 @@ class Form_builder {
         $ret_string .= $this->_build_input_addons_post();
         $ret_string .= ($include_pre_post) ? $this->_build_help_block() : '';
         $ret_string .= ($include_pre_post) ? $this->_post_input() : '';
-        
+
         return $ret_string;
     }
 
