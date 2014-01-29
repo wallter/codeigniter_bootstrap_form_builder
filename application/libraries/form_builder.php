@@ -69,7 +69,7 @@ class Form_builder {
         'default_control_label_class' => 'col-md-2 control-label',
         'default_form_control_class' => 'col-md-9',
         'default_form_class' => 'form-horizontal col-md-12',
-        'default_submit_classes' => 'btn btn-primary',
+        'default_button_classes' => 'btn btn-primary',
         'default_date_post_addon' => '<span class="input-group-btn"><button class="btn default" type="button"><i class="fa fa-calendar"></i></button></span>'
     );
     private $func; /* Global function holder - used in switches */
@@ -170,11 +170,17 @@ class Form_builder {
             if (is_json($v)) {
                 $elm_options['type'] = 'json';
             } else {
+                /* the key contains 'date' - if it does lets assume that it should be a date */
+                if (strpos(strtolower($k), 'date') !== FALSE) {
+                    $k = 'date';
+                }
                 switch ($k) {
                     case 'id':
                         $elm_options['readonly'] = 'readonly';
                         break;
-
+                    case 'date':
+                        $elm_options['type'] = 'date';
+                        break;
                     case 'modified':
                     case 'created':
                         $elm_options['type'] = 'date';
@@ -194,10 +200,14 @@ class Form_builder {
 
             /* We need to override what was 'auto' created - Note: should always be done last */
             if (isset($custom_options) && isset($custom_options[$k])) {
-                $elm_options = array_merge($elm_options, $custom_options[$k]);
+                if (is_array($custom_options[$k])) {
+                    $elm_options = array_merge($elm_options, $custom_options[$k]);
+                }
             }
 
-            $options[] = $elm_options;
+            if (!(isset($custom_options) && isset($custom_options[$k]) && !is_array($custom_options[$k]) && $custom_options[$k] == 'unset')) {
+                $options[] = $elm_options;
+            }
         }
 
         return $options;
@@ -487,6 +497,22 @@ class Form_builder {
                     $kv_str = '';
                     $input_html_string = $this->_recursive_build_json((array) json_decode($this->elm_options['value']));
                     break;
+                case 'form_button':
+                case 'form_anchor':
+                case 'form_a':
+                    $class = str_replace($this->config['default_button_classes'], '', $this->elm_options['class']);
+                    $class = str_replace($this->config['bootstrap_required_input_class'], '', $this->elm_options['class']); /* remove the 'form-control' class */
+                    /* add class="valid" to all dropdowns (makes them not full width - and works better with select2 plugin) */
+                    if (strpos($class, $this->config['default_button_classes']) === FALSE) {
+                        $class .= ' ' . $this->config['default_button_classes'];
+                    }
+                    $this->elm_options['class'] = trim($class);
+                    
+                    $value = $this->elm_options['label'];
+                    unset($this->elm_options['label']);
+                    
+                    $input_html_string = anchor('', $value, $this->elm_options);
+                    break;
                 case 'form_label':
                     $input_html_string = form_label($this->_make_label($this->elm_options['value']), '', array(
                         'class' => ' control-label'
@@ -524,11 +550,11 @@ class Form_builder {
                     unset($this->elm_options['label']);
                     unset($this->elm_options['name']);
 
-                    $class = str_replace($this->config['default_submit_classes'], '', $this->elm_options['class']);
+                    $class = str_replace($this->config['default_button_classes'], '', $this->elm_options['class']);
                     $class = str_replace($this->config['bootstrap_required_input_class'], '', $this->elm_options['class']); /* remove the 'form-control' class */
                     /* add class="valid" to all dropdowns (makes them not full width - and works better with select2 plugin) */
-                    if (strpos($class, $this->config['default_submit_classes']) === FALSE) {
-                        $class .= ' ' . $this->config['default_submit_classes'];
+                    if (strpos($class, $this->config['default_button_classes']) === FALSE) {
+                        $class .= ' ' . $this->config['default_button_classes'];
                     }
                     $this->elm_options['class'] = trim($class);
 
