@@ -1,4 +1,4 @@
-<?
+<?php
 
 // -------------------------------------------------------------------------------------------------
 /**
@@ -8,22 +8,16 @@
  * This simple Library builds internal form elements with correct wrappers for Bootstrap 3.
  * 
  * It extends the Bootstrap form helper and will not work without it.
- * 
- *
- * Carabiner is inspired by Minify {@link http://code.google.com/p/minify/ by Steve Clay}, PHP 
- * Combine {@link http://rakaz.nl/extra/code/combine/ by Niels Leenheer} and AssetLibPro 
- * {@link http://code.google.com/p/assetlib-pro/ by Vincent Esche}, among other things.
  *
  * @package		codeigniter_form_builder
  * @subpackage          Libraries
  * @category            Form Bilder
  * @author		Tyler Wall <tyler.r.wall@gmail.com>	
- * @version		0.8.2
+ * @version		0.8.4
  * @license		http://opensource.org/licenses/MIT MIT licensed.
  *
  * @todo		fix new bugs. Duh :D
  * @todo                test Objects
- * @todo                Add more attributes for form_elements
  * @todo                Add radio 
  */
 /*
@@ -33,7 +27,7 @@
 
   1. Load codeigniter 'form' helper       ---         $this->load->helper('form');
   2. Load this library                    ---         $this->load->library('form_builder');
-  3. Open your form (include the approprate class and col-md-* for formating
+  3. Open your form (include the approprate class and col-sm-* for formating
   4. Echo out the output of the form_builder->build_*
   5. Close your form ('</form>').
   6. Enjoy easy forms
@@ -43,7 +37,7 @@
   <? $this->load->helper('form'); ?>
   <? $this->load->library('form_builder'); ?>
 
-  <form id="item_form" name="item_form" method="post" class="col-md-7 form-horizontal" action="">
+  <form id="item_form" name="item_form" method="post" class="col-sm-7 form-horizontal" action="">
   <?=
   $this->form_builder->build_form_horizontal(
   array(
@@ -66,11 +60,13 @@ class Form_builder {
         'default_input_container_class' => 'form-group',
         'bootstrap_required_input_class' => 'form-control',
         'default_dropdown_class' => 'valid',
-        'default_control_label_class' => 'col-md-2 control-label',
-        'default_form_control_class' => 'col-md-9',
-        'default_form_class' => 'form-horizontal col-md-12',
+        'default_control_label_class' => 'col-sm-2 control-label',
+        'default_form_control_class' => 'col-sm-9',
+        'default_form_class' => 'form-horizontal col-sm-12',
         'default_button_classes' => 'btn btn-primary',
-        'default_date_post_addon' => '<span class="input-group-btn"><button class="btn default" type="button"><i class="fa fa-calendar"></i></button></span>'
+        'default_date_post_addon' => '<span class="input-group-btn"><button class="btn default" type="button"><i class="fa fa-calendar"></i></button></span>',
+        'empty_value_html' => '<div class="form-control" style="border:none;"></div>',
+        'use_testing_value' => true
     );
     private $func; /* Global function holder - used in switches */
     private $data_source; /* Global holder for the source of the data */
@@ -105,8 +101,12 @@ class Form_builder {
         }
     }
 
+    function get_config() {
+        return $this->config;
+    }
+
     function open_form($options) {
-        // <form id="item_form" name="item_form" method="post" class="col-md-12 form-horizontal" action="">
+        // <form id="item_form" name="item_form" method="post" class="col-sm-12 form-horizontal" action="">
         $action = '';
         if (isset($options['action'])) {
             $action = $options['action'];
@@ -194,6 +194,9 @@ class Form_builder {
                             '0' => 'De-Active'
                         );
                         $elm_options['readonly'] = 'readonly';
+                        break;
+                    case 'log':
+                        $elm_options['type'] = 'json';
                         break;
                 }
             }
@@ -360,11 +363,16 @@ class Form_builder {
          * Also, make for fun defaulting by passing an object 
          */
         $default_value = '';
-        if (isset($this->elm_options['name']) && isset($this->data_source[$this->elm_options['name']])) {
+        if (isset($this->elm_options['name']) && isset($this->data_source[$this->elm_options['name']]) && empty($this->elm_options['value'])) {
             $default_value = $this->data_source[$this->elm_options['name']];
         } elseif (isset($this->elm_options['value'])) {
             $default_value = $this->elm_options['value'];
         }
+
+        if (isset($this->elm_options['testing_value']) && $this->config['use_testing_value']) {
+            $default_value = $this->elm_options['testing_value'];
+        }
+
         $this->elm_options['value'] = $this->adv_set_value($this->elm_options['name'], $default_value);
 
 
@@ -456,7 +464,30 @@ class Form_builder {
     }
 
     function squish_HTML($html) {
-        return str_replace(array("\r\n", "\r", "\n"), "", $html);
+        $re = '%# Collapse whitespace everywhere but in blacklisted elements.
+        (?>             # Match all whitespans other than single space.
+          [^\S ]\s*     # Either one [\t\r\n\f\v] and zero or more ws,
+        | \s{2,}        # or two or more consecutive-any-whitespace.
+        ) # Note: The remaining regex consumes no text at all...
+        (?=             # Ensure we are not in a blacklist tag.
+          [^<]*+        # Either zero or more non-"<" {normal*}
+          (?:           # Begin {(special normal*)*} construct
+            <           # or a < starting a non-blacklist tag.
+            (?!/?(?:textarea|pre|script)\b)
+            [^<]*+      # more non-"<" {normal*}
+          )*+           # Finish "unrolling-the-loop"
+          (?:           # Begin alternation group.
+            <           # Either a blacklist start tag.
+            (?>textarea|pre|script)\b
+          | \z          # or end of file.
+          )             # End alternation group.
+        )  # If we made it here, we are not in a blacklist tag.
+        %Six';
+        $text = preg_replace($re, " ", $html);
+        if ($text === null) {
+            return $html;
+        }
+        return $text;
     }
 
     /*
@@ -477,12 +508,18 @@ class Form_builder {
                 dump($this->elm_options);
                 show_error('Tried to create `form_combine` with no elements. (id="' . $this->elm_options['name'] . '")');
             }
+
             $elm_options_backup = $this->elm_options; /* We need to make a copy for everything to work correctly */
 
+            $counter = 0;
             foreach ($elm_options_backup['elements'] as $elm) {
                 $this->elm_options = $elm; /* We override elm_options */
                 $this->_prep_options(); /* Run Prep on the new one */
+                if ($counter > 0 && !empty($elm_options_backup['combine_divider'])) {
+                    $input_html_string .= $elm_options_backup['combine_divider'];
+                }
                 $input_html_string .= $this->_build_input(false);
+                $counter++;
             }
 
             $this->elm_options = $elm_options_backup; /* We put our options back */
@@ -507,10 +544,10 @@ class Form_builder {
                         $class .= ' ' . $this->config['default_button_classes'];
                     }
                     $this->elm_options['class'] = trim($class);
-                    
+
                     $value = $this->elm_options['label'];
                     unset($this->elm_options['label']);
-                    
+
                     $input_html_string = anchor('', $value, $this->elm_options);
                     break;
                 case 'form_label':
@@ -548,7 +585,9 @@ class Form_builder {
 
                     unset($this->elm_options['id']);
                     unset($this->elm_options['label']);
-                    unset($this->elm_options['name']);
+                    if (!isset($this->elm_options['value'])) {
+                        unset($this->elm_options['name']);
+                    }
 
                     $class = str_replace($this->config['default_button_classes'], '', $this->elm_options['class']);
                     $class = str_replace($this->config['bootstrap_required_input_class'], '', $this->elm_options['class']); /* remove the 'form-control' class */
@@ -577,6 +616,10 @@ class Form_builder {
                             if (strpos($class, $this->config['default_dropdown_class']) === FALSE) {
                                 $class .= ' ' . $this->config['default_dropdown_class'];
                             }
+
+                            if (strpos($class, $this->config['bootstrap_required_input_class']) === FALSE) {
+                                $class .= ' ' . $this->config['bootstrap_required_input_class'];
+                            }
                             $this->elm_options['class'] = trim($class);
                         }
 
@@ -594,7 +637,7 @@ class Form_builder {
         $ret_string = '';
         $ret_string .= ($include_pre_post) ? $this->_pre_input() : '';
         $ret_string .= $this->_build_input_addons_pre();
-        $ret_string .= $input_html_string;
+        $ret_string .= (empty($input_html_string)) ? $this->config['empty_value_html'] : $input_html_string;
         $ret_string .= $this->_build_input_addons_post();
         $ret_string .= ($include_pre_post) ? $this->_build_help_block() : '';
         $ret_string .= ($include_pre_post) ? $this->_post_input() : '';
@@ -672,10 +715,16 @@ class Form_builder {
 
     private function _label() {
         $label = '';
-        if (isset($this->elm_options['label'])) {
+        if (isset($this->elm_options['label']) && $this->elm_options['label'] == 'none') {
+            return ''; /* the keyword none */
+        } else if (isset($this->elm_options['label'])) {
             $label = $this->elm_options['label'];
         } elseif (isset($this->elm_options['id']) && $this->func != 'form_submit') {
             $label = $this->_make_label($this->elm_options['id']);
+        }
+
+        if ($this->func == 'form_submit') {
+            $label = '';
         }
 
         return form_label($label, $this->elm_options['name'], array(
@@ -698,7 +747,7 @@ class Form_builder {
             /* This offset class doesn't look that great :/ ' */
             $offset_class = '';
             if ($offset >= 1) {
-                $offset_class = 'col-md-offset-' . $offset;
+                $offset_class = 'col-sm-offset-' . $offset;
             }
 
             if ((is_array($v) || is_object($v)) && !is_string($v)) {
