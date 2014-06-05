@@ -9,15 +9,13 @@
  * 
  * It extends the Bootstrap form helper and will not work without it.
  *
- * @package		codeigniter_form_builder
+ * @package   codeigniter_form_builder
  * @subpackage          Libraries
  * @category            Form Bilder
- * @author		Tyler Wall <tyler.r.wall@gmail.com>	
- * @version		0.8.4
- * @license		http://opensource.org/licenses/MIT MIT licensed.
+ * @author    Tyler Wall <tyler.r.wall@gmail.com> 
+ * @version   0.9.1
+ * @license   http://opensource.org/licenses/MIT MIT licensed.
  *
- * @todo		fix new bugs. Duh :D
- * @todo                test Objects
  * @todo                Add radio 
  */
 /*
@@ -29,7 +27,7 @@
   2. Load this library                    ---         $this->load->library('form_builder');
   3. Open your form (include the approprate class and col-sm-* for formating
   4. Echo out the output of the form_builder->build_*
-  5. Close your form ('</form>').
+  5. Close your form (`echo $this->form_builder->close_form()`).
   6. Enjoy easy forms
 
   -----------------------------------------------------------------------------------------------
@@ -37,21 +35,27 @@
   <? $this->load->helper('form'); ?>
   <? $this->load->library('form_builder'); ?>
 
-  <form id="item_form" name="item_form" method="post" class="col-sm-7 form-horizontal" action="">
-  <?=
-  $this->form_builder->build_form_horizontal(
-  array(
-  array(
-  'id' => 'name',
-  'placeholder' => 'Item Name',
-  ),
-  array(
-  'id' => 'subtitle',
-  'placeholder' => 'Subtitle'
-  )
-  ), $item);
+  <?
+    echo $this->form_builder->open_form(array('action' => site_url('/account/login')));
+    echo $this->form_builder->build_form_horizontal(array(
+        array(
+            'id' => 'email',
+            'placeholder' => 'Email',
+            'type' => 'email'
+        ),
+        array(
+            'id' => 'password',
+            'type' => 'password',
+            'placeholder' => 'Login Password'
+        ),
+        array(
+            'id' => 'submit',
+            'type' => 'submit',
+            'label' => 'Login'
+        )
+    ));
+    echo $this->form_builder->close_form();
   ?>
-  </form>
  */
 class Form_builder {
 
@@ -249,8 +253,8 @@ class Form_builder {
 
     /**
      * Build From  Horizontal
-     * @access	public
-     * @param	Array - The array of options for the form.
+     * @access  public
+     * @param Array - The array of options for the form.
       array(
       array(
       See function _prep_options() for what this needs to contain
@@ -444,9 +448,9 @@ class Form_builder {
      * re-populate an input field or textarea.  If Form Validation
      * is active it retrieves the info from the validation class
      *
-     * @access	public
-     * @param	string
-     * @return	mixed
+     * @access  public
+     * @param string
+     * @return  mixed
      * @author ExpressionEngine Dev Team
      * @author Tyler Wall <tyler.r.wall@gmail.com>
      */
@@ -525,6 +529,19 @@ class Form_builder {
             $this->elm_options = $elm_options_backup; /* We put our options back */
             $this->_prep_options(); /* Run Prep to restore the state in which we begain */
         } else {
+            /*
+             * json
+             * button (anchor, a)
+             * label
+             * date
+             * email
+             * tel
+             * input
+             * hidden
+             * submit
+             * dropdown (option)
+             * html
+             */
             switch ($this->func) {
                 /*
                  * This should eventualy be expanded to be able to edit individual elements in the k=>v 
@@ -552,7 +569,7 @@ class Form_builder {
                     break;
                 case 'form_label':
                     $input_html_string = form_label($this->_make_label($this->elm_options['value']), '', array(
-                        'class' => ' control-label'
+                        'class' => 'control-label text-left'
                     ));
                     break;
                 case 'form_date':
@@ -599,6 +616,7 @@ class Form_builder {
 
                     $input_html_string = form_submit($name, $label, $this->_create_extra_string($this->elm_options));
                     break;
+                case 'form_option':
                 case 'form_dropdown':
                     /* form_dropdown is different than an input */
                     if (isset($this->elm_options['options']) && !empty($this->elm_options['options'])) {
@@ -628,6 +646,13 @@ class Form_builder {
                         dump($this->elm_options);
                         show_error('Tried to create `form_dropdown` with no options. (id="' . $this->elm_options['name'] . '")');
                     }
+                    break;
+                case 'form_html':
+                    if (!isset($this->elm_options['html'])) {
+                        dump($this->elm_options);
+                        show_error('Tried to create `form_html` with no html. (id="' . $this->elm_options['od'] . '")');
+                    }
+                    $input_html_string = $this->elm_options['html'];
                     break;
                 default:
                     $input_html_string = call_user_func($this->func, $this->elm_options);
