@@ -4,19 +4,19 @@
 /**
  * form_builder
  * Bootstrap form builder
- * 
+ *
  * This simple Library builds internal form elements with correct wrappers for Bootstrap 3.
- * 
+ *
  * It extends the Bootstrap form helper and will not work without it.
  *
  * @package   codeigniter_form_builder
  * @subpackage          Libraries
  * @category            Form Bilder
- * @author    Tyler Wall <tyler.r.wall@gmail.com> 
- * @version   0.9.1
+ * @author    Tyler Wall <tyler.r.wall@gmail.com>
+ * @version   0.9.2
  * @license   http://opensource.org/licenses/MIT MIT licensed.
  *
- * @todo                Add radio 
+ * @todo                Add radio
  */
 /*
   ===============================================================================================
@@ -79,7 +79,7 @@ class Form_builder {
     private $print_string = ''; /* An output buffer */
 
     /**
-     * @property array $input_addons  
+     * @property array $input_addons
      * This is for adding input-groups and addons.
      * pre/post do not have to be inputed as arrays but will be turned into ones
      * so that we can handle multipal pre/post input addons.
@@ -92,8 +92,12 @@ class Form_builder {
         'post_html' => ''
     );
 
-    function __construct() {
-        $this->func = $this->config['default_input_type'];
+    function __construct($config = array()) {
+        if (!empty($init)) {
+          $this->init($config);
+        } else {
+          $this->func = $this->config['default_input_type'];
+        }
     }
 
     function init($config = array()) {
@@ -134,7 +138,7 @@ class Form_builder {
     }
 
     /**
-     * 
+     *
      * @param array $ary - an array from the DB. Format: $k => $v
      * @param array $custom_options - optional, an array that will override
      * the default values produced by this funciton
@@ -167,9 +171,9 @@ class Form_builder {
              * TODO: this should be put in the options. It is suited specificaly for my database
              * configuration and my practices - which include having a 'id', 'modified', 'created', and 'active'
              * column in *ALL* databases - as well as some specific data.
-             * 
+             *
              * NOTE: This function will likely see a lot of change to make sure it is working and/or re-built
-             * 'the right way' 
+             * 'the right way'
              */
             if (is_json($v)) {
                 $elm_options['type'] = 'json';
@@ -221,12 +225,12 @@ class Form_builder {
     }
 
     /**
-     * 
+     *
      * @param array $pre_built - the array that was pre-built using `auto_db_to_options`
      * @param string $id - the id/name of the element to add to
      * @param array $vals_ary - an array of new (or over-riding) values
      * @return none
-     * 
+     *
      * @ussage
      *      $this->form_builder->change_pre_built($coupon_form_options, 'type', array(
      *           'help' => 'Percentage or Fixed Amount',
@@ -236,9 +240,9 @@ class Form_builder {
      *               'F' => 'Fixed Amount'
      *           )
      *       ));
-     * 
+     *
      * @notes The same effect can be gained when calling `auto_db_to_options` and passing
-     * the 2nd paramater ($custom_options). But this is for the event that you need to do 
+     * the 2nd paramater ($custom_options). But this is for the event that you need to do
      * custom / advanced changes.
      */
     function change_pre_built(&$pre_built, $id, $vals_ary) {
@@ -289,14 +293,14 @@ class Form_builder {
 
     /**
      * Function build_display
-     * 
+     *
      * Function is to build a viewable form using the easy form builder.
      * Includes token form_open and form_close just to make sure all the styling
-     * works correctly. 
-     * 
+     * works correctly.
+     *
      * @param array $options - the elements/options for the form elemnts being built.
      * @param array/object $data_source - a default source for the value
-     * @return string - the elements 
+     * @return string - the elements
      */
     function build_display($options, $data_source = array()) {
         $this->_reset_builder();
@@ -363,8 +367,8 @@ class Form_builder {
             }
         }
 
-        /* make sure there is a 'value' attribute 
-         * Also, make for fun defaulting by passing an object 
+        /* make sure there is a 'value' attribute
+         * Also, make for fun defaulting by passing an object
          */
         $default_value = '';
         if (isset($this->elm_options['name']) && isset($this->data_source[$this->elm_options['name']]) && empty($this->elm_options['value'])) {
@@ -443,7 +447,7 @@ class Form_builder {
      * Form Value
      *
      * Upgraded from Codeigniter Form Helper
-     * 
+     *
      * Grabs a value from the POST or GET array for the specified field so you can
      * re-populate an input field or textarea.  If Form Validation
      * is active it retrieves the info from the validation class
@@ -504,7 +508,7 @@ class Form_builder {
         $input_html_string = '';
         /* Combine elements have multiple input elements on the same line.
          * This block will call this function, '_build_input' call recursivly.
-         * 
+         *
          * Example use: Credit Card EXP month/year
          */
         if ($this->func == 'form_combine') {
@@ -536,6 +540,7 @@ class Form_builder {
              * date
              * email
              * tel
+             * number
              * input
              * hidden
              * submit
@@ -544,7 +549,7 @@ class Form_builder {
              */
             switch ($this->func) {
                 /*
-                 * This should eventualy be expanded to be able to edit individual elements in the k=>v 
+                 * This should eventualy be expanded to be able to edit individual elements in the k=>v
                  * For now it will just display them.
                  */
                 case 'form_json':
@@ -591,6 +596,10 @@ class Form_builder {
                     $this->elm_options['type'] = 'tel';
                     $input_html_string = form_input($this->elm_options);
                     break;
+                case 'form_number':
+                    $this->elm_options['type'] = 'number';
+                    $input_html_string = form_input($this->elm_options);
+                    break;
                 case 'form_input':
                     $input_html_string = form_input($this->elm_options);
                     break;
@@ -602,9 +611,6 @@ class Form_builder {
 
                     unset($this->elm_options['id']);
                     unset($this->elm_options['label']);
-                    if (!isset($this->elm_options['value'])) {
-                        unset($this->elm_options['name']);
-                    }
 
                     $class = str_replace($this->config['default_button_classes'], '', $this->elm_options['class']);
                     $class = str_replace($this->config['bootstrap_required_input_class'], '', $this->elm_options['class']); /* remove the 'form-control' class */
@@ -654,8 +660,13 @@ class Form_builder {
                     }
                     $input_html_string = $this->elm_options['html'];
                     break;
+
                 default:
-                    $input_html_string = call_user_func($this->func, $this->elm_options);
+                    if (function_exists($this->func)) {
+                      $input_html_string = call_user_func($this->func, $this->elm_options);
+                    } else {
+                      show_error("Could not find function to build form element: '{$this->func}'");
+                    }
                     break;
             }
         }
@@ -703,7 +714,7 @@ class Form_builder {
     private function _create_extra_string() {
         $extra = '';
         foreach ($this->elm_options as $k => $v) {
-            $extra .= "{$k}=\"{$v}\"";
+            $extra .= " {$k}=\"{$v}\"";
         }
         return trim($extra);
     }
