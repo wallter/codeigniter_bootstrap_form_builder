@@ -661,8 +661,6 @@ class Form_builder {
                     $input_html_string =  form_textarea($this->elm_options);
                     break;
                 case 'form_file':
-                    $this->elm_options['class'] = '';
-                    $this->input_addons['exists'] = false;
                     $input_html_string = form_upload($this->elm_options);
                     break;
                 default:
