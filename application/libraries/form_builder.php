@@ -13,7 +13,7 @@
  * @subpackage          Libraries
  * @category            Form Bilder
  * @author    Tyler Wall <tyler.r.wall@gmail.com>
- * @version   0.9.2
+ * @version   0.9.3
  * @license   http://opensource.org/licenses/MIT MIT licensed.
  *
  * @todo                Add radio
@@ -94,9 +94,9 @@ class Form_builder {
 
     function __construct($config = array()) {
         if (!empty($init)) {
-          $this->init($config);
+            $this->init($config);
         } else {
-          $this->func = $this->config['default_input_type'];
+            $this->func = $this->config['default_input_type'];
         }
     }
 
@@ -259,11 +259,6 @@ class Form_builder {
      * Build From  Horizontal
      * @access  public
      * @param Array - The array of options for the form.
-      array(
-      array(
-      See function _prep_options() for what this needs to contain
-      )
-      )
      * @return  form elements+wrappers HTML
      */
     function build_form_horizontal($options, $data_source = array()) {
@@ -461,14 +456,14 @@ class Form_builder {
     function adv_set_value($field = '', $default = '') {
         if (FALSE === ($OBJ = & _get_validation_object())) {
             if (isset($_POST[$field])) {
-                return form_prep($_POST[$field], $field);
+                return html_escape($_POST[$field]);
             } elseif (isset($_GET[$field])) {
-                return form_prep($_GET[$field], $field);
+                return html_escape($_GET[$field]);
             }
             return $default;
         }
 
-        return form_prep($OBJ->set_value($field, $default), $field);
+        return html_escape($OBJ->set_value($field, $default));
     }
 
     function squish_HTML($html) {
@@ -546,6 +541,8 @@ class Form_builder {
              * submit
              * dropdown (option)
              * html
+             * textarea
+             * file
              */
             switch ($this->func) {
                 /*
@@ -553,14 +550,13 @@ class Form_builder {
                  * For now it will just display them.
                  */
                 case 'form_json':
-                    $kv_str = '';
                     $input_html_string = $this->_recursive_build_json((array) json_decode($this->elm_options['value']));
                     break;
                 case 'form_button':
                 case 'form_anchor':
                 case 'form_a':
                     $class = str_replace($this->config['default_button_classes'], '', $this->elm_options['class']);
-                    $class = str_replace($this->config['bootstrap_required_input_class'], '', $this->elm_options['class']); /* remove the 'form-control' class */
+                    $class = str_replace($this->config['bootstrap_required_input_class'], '', $class); /* remove the 'form-control' class */
                     /* add class="valid" to all dropdowns (makes them not full width - and works better with select2 plugin) */
                     if (strpos($class, $this->config['default_button_classes']) === FALSE) {
                         $class .= ' ' . $this->config['default_button_classes'];
@@ -613,7 +609,7 @@ class Form_builder {
                     unset($this->elm_options['label']);
 
                     $class = str_replace($this->config['default_button_classes'], '', $this->elm_options['class']);
-                    $class = str_replace($this->config['bootstrap_required_input_class'], '', $this->elm_options['class']); /* remove the 'form-control' class */
+                    $class = str_replace($this->config['bootstrap_required_input_class'], '', $class); /* remove the 'form-control' class */
                     /* add class="valid" to all dropdowns (makes them not full width - and works better with select2 plugin) */
                     if (strpos($class, $this->config['default_button_classes']) === FALSE) {
                         $class .= ' ' . $this->config['default_button_classes'];
@@ -660,12 +656,20 @@ class Form_builder {
                     }
                     $input_html_string = $this->elm_options['html'];
                     break;
-
+                case 'form_textarea':
+                    $this->elm_options['value'] = html_entity_decode($this->elm_options['value']);
+                    $input_html_string =  form_textarea($this->elm_options);
+                    break;
+                case 'form_file':
+                    $this->elm_options['class'] = '';
+                    $this->input_addons['exists'] = false;
+                    $input_html_string = form_upload($this->elm_options);
+                    break;
                 default:
                     if (function_exists($this->func)) {
-                      $input_html_string = call_user_func($this->func, $this->elm_options);
+                        $input_html_string = call_user_func($this->func, $this->elm_options);
                     } else {
-                      show_error("Could not find function to build form element: '{$this->func}'");
+                        show_error("Could not find function to build form element: '{$this->func}'");
                     }
                     break;
             }
@@ -720,7 +724,7 @@ class Form_builder {
     }
 
     private function _build_form_open($action, $attributes) {
-        return form_open($action, $attributes);
+        return form_open_multipart($action, $attributes);
     }
 
     private function _pre_elm() {
