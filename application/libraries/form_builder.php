@@ -94,9 +94,9 @@ class Form_builder {
 
     function __construct($config = array()) {
         if (!empty($init)) {
-            $this->init($config);
+          $this->init($config);
         } else {
-            $this->func = $this->config['default_input_type'];
+          $this->func = $this->config['default_input_type'];
         }
     }
 
@@ -665,9 +665,9 @@ class Form_builder {
                     break;
                 default:
                     if (function_exists($this->func)) {
-                        $input_html_string = call_user_func($this->func, $this->elm_options);
+                      $input_html_string = call_user_func($this->func, $this->elm_options);
                     } else {
-                        show_error("Could not find function to build form element: '{$this->func}'");
+                      show_error("Could not find function to build form element: '{$this->func}'");
                     }
                     break;
             }
