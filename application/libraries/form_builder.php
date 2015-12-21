@@ -93,7 +93,7 @@ class Form_builder {
     );
 
     function __construct($config = array()) {
-        if (!empty($init)) {
+        if (!empty($config)) {
           $this->init($config);
         } else {
           $this->func = $this->config['default_input_type'];
