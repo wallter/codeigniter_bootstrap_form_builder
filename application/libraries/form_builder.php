@@ -70,6 +70,7 @@ class Form_builder {
         'default_button_classes' => 'btn btn-primary',
         'default_date_post_addon' => '<span class="input-group-btn"><button class="btn default" type="button"><i class="fa fa-calendar"></i></button></span>',
         'default_date_format' => 'Y-m-d',
+        'default_date_today_if_not_set' => FALSE,
         'default_datepicker_class' => 'date-picker',
         'empty_value_html' => '<div class="form-control" style="border:none;"></div>',
         'use_testing_value' => true
@@ -582,17 +583,23 @@ class Form_builder {
 
                     try {
                         if (empty($this->elm_options['value'])) {
-                            $dt = new DateTime('today');
+                            if ($this->config['default_date_today_if_not_set']) {
+                                $dt = new DateTime('today');
+                                $this->elm_options['value'] = $dt->format($this->config['default_date_format']);
+                            }
                         } else {
                             $dt = new DateTime($this->elm_options['value']);
+                            $this->elm_options['value'] = $dt->format($this->config['default_date_format']);
                         }
                     } catch (Exception $e) {
-                        log_message('error', $e->getMessage() . ' at "' . $e->getFile() . '" on line ' . $e->getLine());
+                        log_message('error', $e->getMessage().' at "'.$e->getFile().'" on line '.$e->getLine());
 
-                        $dt = new DateTime('today');
+                        if ($this->config['default_date_today_if_not_set']) {
+                            $dt = new DateTime('today');
+                            $this->elm_options['value'] = $dt->format($this->config['default_date_format']);
+                        }
                     }
 
-                    $this->elm_options['value'] = $dt->format($this->config['default_date_format']);
                     $input_html_string = form_input($this->elm_options);
                     break;
                 case 'form_email':
