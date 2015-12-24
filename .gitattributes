@@ -1,2 +1,2 @@
 text=lf
-filter=tabspace
+*.php filter=tabspace
