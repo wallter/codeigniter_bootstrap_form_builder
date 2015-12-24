@@ -146,7 +146,7 @@ class Form_builder {
      * @param array $custom_options - optional, an array that will override
      * the default values produced by this funciton
      * @return an array compatible with this class's `build_*` funcitons
-     * @ussage
+     * @usage
      *      $coupon_form_options = $this->form_builder->auto_db_to_options($coupon, array(
      *           'code' => array(
      *               'help' => 'The code the customer enters to get the discount'
@@ -233,7 +233,7 @@ class Form_builder {
      * @param array $vals_ary - an array of new (or over-riding) values
      * @return none
      *
-     * @ussage
+     * @usage
      *      $this->form_builder->change_pre_built($coupon_form_options, 'type', array(
      *           'help' => 'Percentage or Fixed Amount',
      *           'type' => 'dropdown',
