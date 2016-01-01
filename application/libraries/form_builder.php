@@ -69,10 +69,10 @@ class Form_builder {
         'default_form_control_class' => 'col-sm-9',
         'default_form_class' => 'form-horizontal col-sm-12',
         'default_button_classes' => 'btn btn-primary',
-        'default_date_post_addon' => '<span class="input-group-btn"><button class="btn default" type="button"><i class="fa fa-calendar"></i></button></span>',
+        'default_date_post_addon' => '', // For instance '<span class="input-group-btn"><button class="btn default" type="button"><i class="glyphicon glyphicon-calendar"></i></button></span>'
         'default_date_format' => 'Y-m-d',
         'default_date_today_if_not_set' => FALSE,
-        'default_datepicker_class' => 'date-picker',
+        'default_datepicker_class' => '', // For instance 'date-picker'
         'empty_value_html' => '<div class="form-control" style="border:none;"></div>',
         'use_testing_value' => true
     );
@@ -576,9 +576,11 @@ class Form_builder {
                     ));
                     break;
                 case 'form_date':
-                    $this->input_addons['exists'] = true;
                     $this->elm_options['type'] = 'date'; // HTML5 compliant type for date
-                    $this->input_addons['post_html'] = $this->config['default_date_post_addon'];
+                    if ($this->config['default_date_post_addon'] != '') {
+                        $this->input_addons['exists'] = TRUE;
+                        $this->input_addons['post_html'] = $this->config['default_date_post_addon'];
+                    }
 
                     try {
                         if (empty($this->elm_options['value'])) {
@@ -751,7 +753,7 @@ class Form_builder {
     }
 
     private function _pre_input() {
-        if ($this->func == 'form_date') {
+        if (($this->func === 'form_date') && ($this->config['default_datepicker_class'] !== '')) {
             return '<div class="date '.$this->config['default_datepicker_class'].' ' . $this->config['default_form_control_class'] . '" data-date="' . $this->elm_options['value'] . '" data-date-format="'.preg_replace(array('/Y/', '/m/', '/d/'), array('yyyy', 'mm', 'dd'), $this->config['default_date_format']).'" data-date-viewmode="years">';
         }
         return '<div class="' . $this->config['default_form_control_class'] . '">';
