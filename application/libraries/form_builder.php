@@ -506,14 +506,15 @@ class Form_builder {
      */
     function adv_set_value($field = '', $default = '') {
         if (FALSE === ($OBJ = & _get_validation_object())) {
-          $input = ci()->input->request($field);
-            if ($input) {
-                return form_prep($input, $field);
+            if (isset($_POST[$field])) {
+                return html_escape($_POST[$field]);
+            } elseif (isset($_GET[$field])) {
+                return html_escape($_GET[$field]);
             }
             return $default;
         }
 
-        return form_prep($OBJ->set_value($field, $default), $field);
+        return html_escape($OBJ->set_value($field, $default));
     }
 
     function squish_HTML($html) {
@@ -590,6 +591,8 @@ class Form_builder {
              * submit
              * dropdown (option)
              * html
+             * textarea
+             * file
              */
             switch ($this->func) {
                 /*
@@ -597,14 +600,13 @@ class Form_builder {
                  * For now it will just display them.
                  */
                 case 'form_json':
-                    $kv_str = '';
                     $input_html_string = $this->_recursive_build_json((array) json_decode($this->elm_options['value']));
                     break;
                 case 'form_button':
                 case 'form_anchor':
                 case 'form_a':
                     $class = str_replace($this->config['default_button_classes'], '', $this->elm_options['class']);
-                    $class = str_replace($this->config['bootstrap_required_input_class'], '', $this->elm_options['class']); /* remove the 'form-control' class */
+                    $class = str_replace($this->config['bootstrap_required_input_class'], '', $class); /* remove the 'form-control' class */
                     /* add class="valid" to all dropdowns (makes them not full width - and works better with select2 plugin) */
                     if (strpos($class, $this->config['default_button_classes']) === FALSE) {
                         $class .= ' ' . $this->config['default_button_classes'];
@@ -656,7 +658,7 @@ class Form_builder {
                     }
 
                     $class = str_replace($this->config['default_button_classes'], '', $this->elm_options['class']);
-                    $class = str_replace($this->config['bootstrap_required_input_class'], '', $this->elm_options['class']); /* remove the 'form-control' class */
+                    $class = str_replace($this->config['bootstrap_required_input_class'], '', $class); /* remove the 'form-control' class */
                     /* add class="valid" to all dropdowns (makes them not full width - and works better with select2 plugin) */
                     if (strpos($class, $this->config['default_button_classes']) === FALSE) {
                         $class .= ' ' . $this->config['default_button_classes'];
@@ -705,6 +707,13 @@ class Form_builder {
                         show_error('Tried to create `form_html` with no html. (id="' . $this->elm_options['od'] . '")');
                     }
                     $input_html_string = $this->elm_options['html'];
+                    break;
+                case 'form_textarea':
+                    $this->elm_options['value'] = html_entity_decode($this->elm_options['value']);
+                    $input_html_string =  form_textarea($this->elm_options);
+                    break;
+                case 'form_file':
+                    $input_html_string = form_upload($this->elm_options);
                     break;
                 default:
                     $input_html_string = call_user_func($this->func, $this->elm_options);
