@@ -64,6 +64,7 @@ class Form_builder {
         'bootstrap_required_input_class' => 'form-control',
         'default_dropdown_class' => 'valid',
         'default_control_label_class' => 'col-sm-2 control-label',
+        'default_no_label_class' => 'col-sm-offset-2',
         'default_form_control_class' => 'col-sm-9',
         'default_form_class' => 'form-horizontal col-sm-12',
         'default_button_classes' => 'btn btn-primary',
@@ -283,9 +284,18 @@ class Form_builder {
                         // Link main label to input when there is only one option and that option has an empty label
                         $link_to_input = ((count($this->elm_options['options']) === 1) && array_key_exists('label', $this->elm_options['options'][0]) && ($this->elm_options['options'][0]['label'] === ''));
 
+                        $default_form_control_class = $this->config['default_form_control_class'];
+
+                        if (!array_key_exists('label', $this->elm_options) || ($this->elm_options['label'] === 'none'))
+                        {
+                            $this->config['default_form_control_class'] .= ' '.$this->config['default_no_label_class'];
+                        }
+
                         $this->print_string .= $this->_pre_elm();
                         $this->print_string .= $this->_label($link_to_input);
                         $this->print_string .= $this->_pre_input();
+
+                        $this->config['default_form_control_class'] = $default_form_control_class;
 
                         $this->elm_options['id'] = $id;
                         $all_elm_options = $this->elm_options;
