@@ -280,8 +280,11 @@ class Form_builder {
                         $id = $this->elm_options['id'];
                         $this->elm_options['id'] = '';
 
+                        // Link main label to input when there is only one option and that option has an empty label
+                        $link_to_input = ((count($this->elm_options['options']) === 1) && array_key_exists('label', $this->elm_options['options'][0]) && ($this->elm_options['options'][0]['label'] === ''));
+
                         $this->print_string .= $this->_pre_elm();
-                        $this->print_string .= $this->_label(FALSE);
+                        $this->print_string .= $this->_label($link_to_input);
                         $this->print_string .= $this->_pre_input();
 
                         $this->elm_options['id'] = $id;
@@ -300,7 +303,7 @@ class Form_builder {
 
                             $this->print_string .= '<label class="'.$label_class.'">';
                             $this->print_string .= $this->_build_input(FALSE);
-                            $this->print_string .= $this->elm_options['label'].'</label>';
+                            $this->print_string .= ($this->elm_options['label'] === '') ? '&nbsp;' : $this->elm_options['label'].'</label>'; // Place a nbps to keep the radio button / checkbox aligned with the main label
                         }
 
                         $this->print_string .= $this->_post_input();
