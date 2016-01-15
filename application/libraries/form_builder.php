@@ -281,7 +281,7 @@ class Form_builder {
                         $this->elm_options['id'] = '';
 
                         $this->print_string .= $this->_pre_elm();
-                        $this->print_string .= $this->_label();
+                        $this->print_string .= $this->_label(FALSE);
                         $this->print_string .= $this->_pre_input();
 
                         $this->elm_options['id'] = $id;
@@ -809,7 +809,12 @@ class Form_builder {
         return '</div>';
     }
 
-    private function _label() {
+    /**
+     * Create a label
+     * @param boolean $link_to_input_id If set to FALSE, the label won't be linked to an input (i.e. for radio button and checkboxes)
+     * @return string
+     */
+    private function _label($link_to_input_id = TRUE) {
         $label = '';
         if (isset($this->elm_options['label']) && $this->elm_options['label'] == 'none') {
             return ''; /* the keyword none */
@@ -823,7 +828,7 @@ class Form_builder {
             $label = '';
         }
 
-        return form_label($label, $this->elm_options['name'], array(
+        return form_label($label, $link_to_input_id ? $this->elm_options['name'] : '', array(
             'class' => $this->config['default_control_label_class']
         ));
     }
