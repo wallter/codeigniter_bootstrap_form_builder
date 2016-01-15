@@ -278,14 +278,10 @@ class Form_builder {
                         break;
                     case 'form_checkbox':
                     case 'form_radio':
-                        $id = $this->elm_options['id'];
-                        $this->elm_options['id'] = '';
-
                         // Link main label to input when there is only one option and that option has an empty label
                         $link_to_input = ((count($this->elm_options['options']) === 1) && array_key_exists('label', $this->elm_options['options'][0]) && ($this->elm_options['options'][0]['label'] === ''));
 
                         $default_form_control_class = $this->config['default_form_control_class'];
-
                         if (!array_key_exists('label', $this->elm_options) || ($this->elm_options['label'] === 'none'))
                         {
                             $this->config['default_form_control_class'] .= ' '.$this->config['default_no_label_class'];
@@ -297,7 +293,6 @@ class Form_builder {
 
                         $this->config['default_form_control_class'] = $default_form_control_class;
 
-                        $this->elm_options['id'] = $id;
                         $all_elm_options = $this->elm_options;
 
                         foreach ($all_elm_options['options'] as $elm_suboptions) {
