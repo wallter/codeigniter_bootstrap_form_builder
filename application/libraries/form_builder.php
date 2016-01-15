@@ -14,7 +14,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * @subpackage          Libraries
  * @category            Form Bilder
  * @author    Tyler Wall <tyler.r.wall@gmail.com>
- * @version   0.9.3
+ * @version   0.9.4
  * @license   http://opensource.org/licenses/MIT MIT licensed.
  */
 /*
