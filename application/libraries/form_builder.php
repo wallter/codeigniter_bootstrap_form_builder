@@ -704,7 +704,7 @@ class Form_builder {
                 case 'form_html':
                     if (!isset($this->elm_options['html'])) {
                         dump($this->elm_options);
-                        show_error('Tried to create `form_html` with no html. (id="' . $this->elm_options['od'] . '")');
+                        show_error('Tried to create `form_html` with no html. (id="' . $this->elm_options['id'] . '")');
                     }
                     $input_html_string = $this->elm_options['html'];
                     break;
