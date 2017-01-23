@@ -64,6 +64,7 @@ class Form_builder {
         'bootstrap_required_input_class' => 'form-control',
         'default_dropdown_class' => 'valid',
         'default_control_label_class' => 'col-sm-2 control-label',
+        'default_no_label_class' => 'col-sm-offset-2',
         'default_form_control_class' => 'col-sm-9',
         'default_form_class' => 'form-horizontal col-sm-12',
         'default_button_classes' => 'btn btn-primary',
@@ -277,14 +278,21 @@ class Form_builder {
                         break;
                     case 'form_checkbox':
                     case 'form_radio':
-                        $id = $this->elm_options['id'];
-                        $this->elm_options['id'] = '';
+                        // Link main label to input when there is only one option and that option has an empty label
+                        $link_to_input = ((count($this->elm_options['options']) === 1) && array_key_exists('label', $this->elm_options['options'][0]) && ($this->elm_options['options'][0]['label'] === ''));
+
+                        $default_form_control_class = $this->config['default_form_control_class'];
+                        if (!array_key_exists('label', $this->elm_options) || ($this->elm_options['label'] === 'none'))
+                        {
+                            $this->config['default_form_control_class'] .= ' '.$this->config['default_no_label_class'];
+                        }
 
                         $this->print_string .= $this->_pre_elm();
-                        $this->print_string .= $this->_label();
+                        $this->print_string .= $this->_label($link_to_input);
                         $this->print_string .= $this->_pre_input();
 
-                        $this->elm_options['id'] = $id;
+                        $this->config['default_form_control_class'] = $default_form_control_class;
+
                         $all_elm_options = $this->elm_options;
 
                         foreach ($all_elm_options['options'] as $elm_suboptions) {
@@ -300,7 +308,7 @@ class Form_builder {
 
                             $this->print_string .= '<label class="'.$label_class.'">';
                             $this->print_string .= $this->_build_input(FALSE);
-                            $this->print_string .= $this->elm_options['label'].'</label>';
+                            $this->print_string .= ($this->elm_options['label'] === '') ? '&nbsp;' : $this->elm_options['label'].'</label>'; // Place a nbps to keep the radio button / checkbox aligned with the main label
                         }
 
                         $this->print_string .= $this->_post_input();
@@ -809,7 +817,12 @@ class Form_builder {
         return '</div>';
     }
 
-    private function _label() {
+    /**
+     * Create a label
+     * @param boolean $link_to_input_id If set to FALSE, the label won't be linked to an input (i.e. for radio button and checkboxes)
+     * @return string
+     */
+    private function _label($link_to_input_id = TRUE) {
         $label = '';
         if (isset($this->elm_options['label']) && $this->elm_options['label'] == 'none') {
             return ''; /* the keyword none */
@@ -823,7 +836,7 @@ class Form_builder {
             $label = '';
         }
 
-        return form_label($label, $this->elm_options['name'], array(
+        return form_label($label, $link_to_input_id ? $this->elm_options['name'] : '', array(
             'class' => $this->config['default_control_label_class']
         ));
     }
